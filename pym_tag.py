@@ -11,9 +11,8 @@
 """
 
 import os.path
-import shutil
+import tempfile
 from contextlib import suppress
-from time import time
 
 import win32con
 # noinspection PyProtectedMember
@@ -193,14 +192,14 @@ class TagEditor(App, BoxLayout):
             self.layout_button.add_widget(effect_widget)
 
         # button bindings
-        self.button_open.bind(on_press=self.file_open)
-        self.button_reset.bind(on_press=self.reset)
-        self.button_save.bind(on_press=self.save_file)
-        self.button_album_art_change.bind(on_press=self.album_art_manager)
+        for button, binding in zip((self.button_open, self.button_save, self.button_reset,
+                                    self.button_album_art_change),
+                                   (self.file_open, self.reset, self.save_file,
+                                    self.album_art_manager)):
+            button.bind(on_press=binding)
 
         self.file_name, self.file_path, self.file_extension = str(), list(), str()
-
-        self.to_delete = None
+        self.to_delete = tempfile.TemporaryDirectory()
 
     def build(self):
         """
@@ -237,6 +236,9 @@ class TagEditor(App, BoxLayout):
             self.image_cover_art.clear_widgets()
         TagEditor.FILE_OPENED = False
 
+        self.to_delete.cleanup()
+        self.to_delete = tempfile.TemporaryDirectory()
+
     def file_open(self, _: Button):
         """
             Opens a Windows file open dialog.
@@ -267,18 +269,13 @@ class TagEditor(App, BoxLayout):
             audio_file, mp3_file = EasyID3(self.file_path[0]), MP3(self.file_path[0])
 
         if any(['APIC:Cover' in mp3_file, 'APIC:' in mp3_file]):
-            _temp_dir_name = rf"{os.getcwd()}\{self.file_name}{round(time())}"
-            os.mkdir(_temp_dir_name)
-            self.to_delete = True
-            TagEditor.TO_DELETE.append(_temp_dir_name)
-
-            with open(f'{_temp_dir_name}/image.jpg', 'wb') as img:
+            with open(os.path.join(self.to_delete.name, 'image.jpeg'), 'wb') as img:
                 if 'APIC:' in mp3_file:
                     img.write(mp3_file['APIC:'].data)
                 else:
                     img.write(mp3_file['APIC:Cover'].data)
 
-            self.image_cover_art.source = f'{_temp_dir_name}/image.jpg'
+            self.image_cover_art.source = (os.path.join(self.to_delete.name, 'image.jpeg'))
 
         self.title += f" -> {self.file_name}"
         self.label_file_name.pretty_text = self.file_name
@@ -393,7 +390,7 @@ class TagEditor(App, BoxLayout):
     def album_art_local(self, _: Button, downloaded=False):
         """
         Allows to selected the album art from the local file system.
-        Opens the file dialog for selecting jpeg or png or jpg file
+        Opens the file dialog for selecting jpeg or png or jpeg file
 
         It will open user's default Downloads folder in case the file is downloaded from the
         internet
@@ -404,7 +401,7 @@ class TagEditor(App, BoxLayout):
         :type downloaded:
         """
         # True for fileopen and False for filesave dialog
-        file_types = "JPEG File (*.jpeg), JPG File (*.jpg) | *.jpeg; *.jpg; | PNG File (*.png) | " \
+        file_types = "JPEG File (*.jpeg), jpg File (*.jpg) | *.jpg; *.jpeg; | PNG File (*.png) | " \
                      "*.png ||"
 
         if not downloaded:
@@ -513,9 +510,8 @@ class TagEditor(App, BoxLayout):
             this will be called when the app will exit
             and it will delete any temporary directory created
         """
-        if self.to_delete is not None and os.path.exists(self.to_delete):
-            for directory in TagEditor.TO_DELETE:
-                shutil.rmtree(directory)
+        if self.to_delete is not None:
+            self.to_delete.cleanup()
         super().on_stop()
 
 
@@ -523,12 +519,8 @@ def main():
     """
         Main Function
     """
-    try:
-        tag_editor = TagEditor()
-        tag_editor.run()
-
-    except Exception as exception:
-        print(exception, file=open("error.txt", 'w+'))
+    tag_editor = TagEditor()
+    tag_editor.run()
 
 
 if __name__ == '__main__':
