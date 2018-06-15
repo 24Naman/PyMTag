@@ -4,7 +4,9 @@
     Python: Created by Naman Jain on 12-01-2018
     File: music_file_tag_editor
 
-    GUI Tag editor for MP3 file
+    GUI Tag editor for MP3 file.
+    It supports Tag editing using mutagen library, renaming the file based on its ID3 attributes,
+    changing album art using local file system or using Internet search or removing it completely.
 
 """
 import os
@@ -12,22 +14,25 @@ import shutil
 import time
 from contextlib import suppress
 
-import mutagen
 import win32con
+# noinspection PyProtectedMember
+from kivy import Config
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.bubble import Bubble
 from kivy.uix.button import Button
-from kivy.uix.effectwidget import EffectWidget
+from kivy.uix.effectwidget import EffectWidget, InvertEffect
 from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.spinner import Spinner
 from kivy.uix.textinput import TextInput
-from mutagen import File
+
+import mutagen
 from mutagen.easyid3 import EasyID3
+# noinspection PyProtectedMember
 from mutagen.id3 import APIC, ID3
 from mutagen.mp3 import MP3
 
@@ -47,23 +52,15 @@ class TagEditor(App, BoxLayout):
     # pylint: disable=global-variable-undefined
 
     # class attributes
+    # File renaming options
     rename = {"no-rename": "Don't Rename", "album-title": "{Album} - {Title}",
               "album-artist-title": "{Album} - {Artist} - {Title}",
               "artist-album-title": "{Artist} - {Album} - {Title}",
               "title-album": "{Title} - {Album}"}
 
-    FILE_OPENED = False
-    TO_DELETE = list()
+    FILE_OPENED = False  # to store state of the opened file
+    TO_DELETE = list()  # to store the list of the temporary directories which are to be deleted
     __DEFAULT_TAG_COVER = r'extras/default_music.png'
-
-    @classmethod
-    def default_tag_image(cls):
-        """
-
-        :return: name of default file cover
-        :rtype: str
-        """
-        return TagEditor.__DEFAULT_TAG_COVER
 
     class ImageButton(ButtonBehavior, Image):
         """
@@ -78,7 +75,6 @@ class TagEditor(App, BoxLayout):
             kwargs['size_hint_x'] = 1
             # The width should be half of the parent
             kwargs['size_hint_y'] = 0.5
-            kwargs['pos_hint'] = {'top': True}
             kwargs['width'] = parent_width
 
             super().__init__(**kwargs)
@@ -89,7 +85,7 @@ class TagEditor(App, BoxLayout):
         """
 
         def __init__(self, text: str, **kwargs):
-            kwargs['text'] = f'[color=000000]{text}[/color]'
+            kwargs['text'] = f'[b][i][size=25][color=000000]{text}[/color][/font][/i][/b]'
             kwargs['size_hint_x'] = 1
             kwargs['size_hint_y'] = 0.25
             kwargs['markup'] = True
@@ -105,7 +101,16 @@ class TagEditor(App, BoxLayout):
 
         @pretty_text.setter
         def pretty_text(self, value):
-            self.text = f"[color=000000]{os.path.basename(value)}[/color]"
+            self.text = f"[b][i][color=000000]{os.path.basename(value)}[/color][/i][/b]"
+
+    @classmethod
+    def default_tag_image(cls) -> str:
+        """
+
+        :return: name of default file cover
+        :rtype: str
+        """
+        return TagEditor.__DEFAULT_TAG_COVER
 
     def __init__(self, **kwargs):
         """
@@ -128,7 +133,12 @@ class TagEditor(App, BoxLayout):
         self.image_cover_art = TagEditor.ImageButton(parent_width)
         self.label_file_name = TagEditor.FileInfoLabel('Open A File')
 
-        for widget in [self.image_cover_art, self.label_file_name]:
+        self.info_layout = BoxLayout(orientation='horizontal')
+
+        self.info_layout.add_widget(TagEditor.FileInfoLabel("Press Escape To Exit"))
+
+        for widget in [self.image_cover_art,
+                       self.label_file_name, self.info_layout]:
             self.music_file_info_layout.add_widget(widget)
 
         self.text_input_dict = dict()
@@ -137,8 +147,9 @@ class TagEditor(App, BoxLayout):
         text_input_hints = ['Title', 'Artists', 'Album', 'Album Artists', 'Year', 'Genre']
 
         for key, hint in zip(text_input_keys, text_input_hints):
-            self.text_input_dict[key] = TextInput(hint_text=hint, multiline=False,
-                                                  hint_text_color=(1, 1, 1, 1), font_size='20sp',
+            self.text_input_dict[key] = TextInput(hint_text_color=[26, 12, 232, 1],
+                                                  hint_text=hint, multiline=False,
+                                                  font_size='20sp',
                                                   background_color=(0, 255, 255, 0.8))
 
         self.button_open = Button(text='Open', background_color=(255, 0, 0, 1),
@@ -177,6 +188,7 @@ class TagEditor(App, BoxLayout):
 
         self.naming_option_spinner.bind(text=naming_option_selector)
 
+        # Button's Layout
         self.layout_button = BoxLayout(orientation='horizontal')
         effect_widget_one, effect_widget_two, effect_widget_three = \
             EffectWidget(), EffectWidget(), EffectWidget()
@@ -185,6 +197,7 @@ class TagEditor(App, BoxLayout):
                 (effect_widget_one, effect_widget_two, effect_widget_three),
                 (self.button_open, self.button_save, self.button_reset)):
             effect_widget.add_widget(widget)
+            effect_widget.effects = [InvertEffect]
             self.layout_button.add_widget(effect_widget)
 
         # button bindings
@@ -221,7 +234,7 @@ class TagEditor(App, BoxLayout):
         """
             Reset all field to original state
         """
-        self.label_file_name.pretty_text = 'Open File'
+        self.label_file_name.pretty_text = 'Open A File'
         self.title = "Musical - Music Tag Editor"
 
         for key in self.text_input_dict:
@@ -257,7 +270,7 @@ class TagEditor(App, BoxLayout):
         try:
             AUDIO_FILE, MP3_FILE = EasyID3(self.file_path[0]), MP3(self.file_path[0])
         except mutagen.id3.ID3NoHeaderError:
-            file = File(self.file_path[0], easy=True)
+            file = mutagen.File(self.file_path[0], easy=True)
             file.add_tags()
             file.save()
             AUDIO_FILE, MP3_FILE = EasyID3(self.file_path[0]), MP3(self.file_path[0])
@@ -344,10 +357,9 @@ class TagEditor(App, BoxLayout):
             os.rename(self.file_path[0], self.file_name)
             self.file_path[0] = self.file_name
 
-        file_saved = Popup(title='File Saved', content=Label(text=f'{self.file_name} Saved'),
-                           size_hint=(None, None), size=(800, 200))
+        Popup(title='MP3 File Saved', content=Label(text=f'{self.file_name} Saved'),
+              size_hint=(None, None), size=(800, 200)).open()
 
-        file_saved.open()
         self.label_file_name.pretty_text = os.path.basename(self.file_name)
 
         TagEditor.FILE_OPENED = True
@@ -385,16 +397,26 @@ class TagEditor(App, BoxLayout):
 
         art_picker.open()
 
-    def album_art_local(self, _: Button):
+    def album_art_local(self, _: Button, downloaded=False):
         """
 
         :param _:
         :type _:
+        :param downloaded:
+        :type downloaded:
         """
         # True for fileopen and False for filesave dialog
         file_types = "JPEG File (*.jpeg), JPG File (*.jpg) | *.jpeg; *.jpg; | PNG File (*.png) | " \
                      "*.png ||"
-        file_dialog = win32ui.CreateFileDialog(True, None, None, 0, file_types, None)
+
+        if not downloaded:
+            file_dialog = win32ui.CreateFileDialog(True, None, None, 0, file_types, None)
+        else:
+            # noinspection SpellCheckingInspection
+            file_dialog = win32ui.CreateFileDialog(True, os.path.join(os.getenv('USERPROFILE',
+                                                                                'Downloads')), None,
+                                                   0, file_types, None)
+
         file_dialog.DoModal()
 
         # assigning the mp3 cover art widget's source to selected image path
@@ -403,14 +425,14 @@ class TagEditor(App, BoxLayout):
 
     def album_art_google(self, _: Button):
         """
-        this method will open Google Chrome and search for the album art...
+        this method will open the browser (default Google Chrome) and search for the album art...
 
         :param _:
         :type _:
         """
         if self.text_input_dict['album'].text == "":
-            Popup(title='Empty Field', content=Label(text="Please fill Album field to perform an "
-                                                          "auto search of album art"),
+            Popup(title='Empty Field', content=Label(text="Please fill Album and Artist field to "
+                                                          "perform an auto search of album art"),
                   size_hint=(None, None), size=(500, 100)).open()
             return
 
@@ -419,8 +441,11 @@ class TagEditor(App, BoxLayout):
                      f"as_q={self.text_input_dict['artist'].text}+" \
                      f" {self.text_input_dict['album'].text} album art"
 
+        # open the default web browser to let the user download the image manually
         import webbrowser
         webbrowser.open(search_url)
+
+        self.album_art_local(_, downloaded=True)
 
     def album_art_remove(self, _: Button):
         """
@@ -440,19 +465,42 @@ class TagEditor(App, BoxLayout):
         finally:
             self.image_cover_art.clear_widgets()
 
+    # noinspection SpellCheckingInspection
     def on_start(self):
         """
-            this will be called when the app will exit
-            and it will do all necessary modification
+            this will be called when the app will start
+            and it will do perform necessary modification
         """
-        # making window transparent
+        # making window non-resizable
+        Config.set('graphics', 'resizable', False)
+
+        # window style values
+        gwl_style_border = 0x00800000
+        gwl_style_dlgframe = 0x00400000
+        gwl_style_sysmenu = 0x00080000
+        gwl_style_thickframe = 0x00040000
+
+        gwl_style_minimizebox = 0x00020000
+        gwl_style_maximizebox = 0x00010000
+
+        gwl_style_caption = gwl_style_border | gwl_style_dlgframe
+
         window_handler = win32gui.FindWindow(None, self.title)
 
+        style = win32gui.GetWindowLong(window_handler, win32con.GWL_STYLE)
+        style = style & ~(gwl_style_border | gwl_style_caption | gwl_style_thickframe |
+                          gwl_style_minimizebox | gwl_style_maximizebox | gwl_style_sysmenu)
+        win32gui.SetWindowLong(window_handler, win32con.GWL_STYLE, style)
+
+        # making window transparent
         win32gui.SetWindowLong(window_handler, win32con.GWL_EXSTYLE,
                                win32gui.GetWindowLong(window_handler, win32con.GWL_EXSTYLE) |
                                win32con.WS_EX_LAYERED)
         winxpgui.SetLayeredWindowAttributes(window_handler, win32api.RGB(0, 0, 0), 200,
                                             win32con.LWA_ALPHA)
+
+        # opening window in maximized mode
+        win32gui.ShowWindow(window_handler, win32con.SW_MAXIMIZE)
 
     def on_stop(self):
         """
