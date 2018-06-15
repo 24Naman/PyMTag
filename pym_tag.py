@@ -13,6 +13,7 @@
 import os.path
 import tempfile
 from contextlib import suppress
+from typing import AnyStr
 
 import win32con
 # noinspection PyProtectedMember
@@ -86,15 +87,6 @@ class TagEditor(App, BoxLayout):
             self.text = f"[b][i][size=15][color=000000]{os.path.basename(value)}[/color][/font]" \
                         f"[/i][/b]"
 
-    @classmethod
-    def default_tag_image(cls) -> str:
-        """
-
-        :return: name of default file cover
-        :rtype: str
-        """
-        return TagEditor.__DEFAULT_TAG_COVER
-
     def __init__(self, **kwargs):
         """
 
@@ -112,7 +104,7 @@ class TagEditor(App, BoxLayout):
                                                 pos_hint={'top': True, 'center_x': True})
         self.music_file_tag_layout = BoxLayout(orientation='vertical', size_hint=(0.5, 1))
 
-        self.image_cover_art = Image(source=TagEditor.default_tag_image())
+        self.image_cover_art = Image(source=TagEditor.__DEFAULT_TAG_COVER)
         self.label_file_name = TagEditor.FileInfoLabel('Open A File')
         self.button_album_art_change = Button(text="Album Art Options", size_hint=(0.25, 0.1),
                                               pos_hint={'center_x': 0.5},
@@ -232,6 +224,10 @@ class TagEditor(App, BoxLayout):
         self.to_delete.cleanup()
         self.to_delete = tempfile.TemporaryDirectory()
 
+        with suppress(IndexError):
+            self.album_art_all_songs(self.text_input_dict['album'].text,
+                                     self.text_input_dict['albumartist'].text)
+
     def file_open(self, _: Button):
         """
             Opens a Windows file open dialog.
@@ -256,6 +252,7 @@ class TagEditor(App, BoxLayout):
         try:
             audio_file, mp3_file = EasyID3(self.file_path[0]), MP3(self.file_path[0])
         except id3.ID3NoHeaderError:
+            # adding tags if the file has none
             file = File(self.file_path[0], easy=True)
             file.add_tags()
             file.save()
@@ -268,7 +265,7 @@ class TagEditor(App, BoxLayout):
                 else:
                     img.write(mp3_file['APIC:Cover'].data)
 
-            self.image_cover_art.source = (os.path.join(self.to_delete.name, 'image.jpeg'))
+            self.image_cover_art.source = os.path.join(self.to_delete.name, 'image.jpeg')
 
         self.title += f" -> {self.file_name}"
         self.label_file_name.pretty_text = self.file_name
@@ -453,9 +450,9 @@ class TagEditor(App, BoxLayout):
         finally:
             self.image_cover_art.clear_widgets()
 
-    def album_art_all_songs(self):
+    def album_art_all_songs(self, album_name: AnyStr, album_artist_name: AnyStr):
         """
-            Apply album art to all songs of the same album
+            Apply album art to all songs of the same album and artist
         """
         pass
 
