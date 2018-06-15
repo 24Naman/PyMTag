@@ -84,6 +84,7 @@ class TagEditor(App, BoxLayout):
             self.albumartist = 'Album Artists'
             self.date = 'Year'
             self.genre = 'Genre'
+            self.tracknumber = 'Track Number'
 
             self.window_title = "Musical - Music Tag Editor"
 
@@ -94,7 +95,7 @@ class TagEditor(App, BoxLayout):
             return self.__dict__[item]
 
         def __iter__(self) -> Iterator[str]:
-            yield from ['title', 'artist', 'album', 'albumartist', 'date', 'genre']
+            yield from ['title', 'artist', 'album', 'albumartist', 'date', 'genre', 'tracknumber']
 
     constants = _Constants()
 
@@ -360,8 +361,8 @@ class TagEditor(App, BoxLayout):
         """
 
         if not TagEditor.FILE_OPENED:
-            self._return_popup(title='No file opened', content=Label(text="Please open a file..."),
-                               ).open()
+            self._return_popup(title='No file opened',
+                               content=Label(text="Please open a file..."),).open()
             return
 
         file = None
@@ -439,8 +440,8 @@ class TagEditor(App, BoxLayout):
         """
 
         if not TagEditor.FILE_OPENED:
-            self._return_popup(title='No file opened', content=Label(text="Please open a file...")
-                               ).open()
+            self._return_popup(title='No file opened',
+                               content=Label(text="Please open a file...")).open()
             return
 
         # button for the popup
