@@ -50,6 +50,7 @@ class TagEditor(App, BoxLayout):
 
     # pylint: disable=too-many-instance-attributes
     # pylint: disable=c-extension-no-member
+    # pylint: disable=no-name-in-module
 
     # class attributes
     # File renaming options
@@ -61,21 +62,20 @@ class TagEditor(App, BoxLayout):
     FILE_OPENED = False  # to store state of the opened file
     TO_DELETE = list()  # to store the list of the temporary directories which are to be deleted
     __DEFAULT_TAG_COVER = r'extras/default_music.png'
+    __ESCAPE_BUTTON = r'extras/escape_label.png'
 
     class ImageButton(ButtonBehavior, Kivy_Image):
         """
             Class for giving Button characteristics to Image
         """
 
-        def __init__(self, parent_width, **kwargs):
+        def __init__(self, **kwargs):
             if os.path.exists(TagEditor.default_tag_image()):
                 kwargs['source'] = TagEditor.default_tag_image()
 
             # The width should be equal to parent
-            kwargs['size_hint_x'] = 1
             # The height should be half of the parent
-            kwargs['size_hint_y'] = 0.5
-            kwargs['width'] = parent_width
+            kwargs['size_hint'] = (1, 0.5)
 
             super().__init__(**kwargs)
 
@@ -101,7 +101,8 @@ class TagEditor(App, BoxLayout):
 
         @pretty_text.setter
         def pretty_text(self, value):
-            self.text = f"[b][i][color=000000]{os.path.basename(value)}[/color][/i][/b]"
+            self.text = f"[b][i][size=25][color=000000]{os.path.basename(value)}[/color][/font]" \
+                        f"[/i][/b]"
 
     @classmethod
     def default_tag_image(cls) -> str:
@@ -129,17 +130,19 @@ class TagEditor(App, BoxLayout):
                                                                                   'center_x': True})
         self.music_file_tag_layout = BoxLayout(orientation='vertical')
 
-        parent_width = self.width
-        self.image_cover_art = TagEditor.ImageButton(parent_width)
+        self.image_cover_art = TagEditor.ImageButton()
         self.label_file_name = TagEditor.FileInfoLabel('Open A File')
 
-        self.info_layout = BoxLayout(orientation='horizontal')
+        self.info_layout = BoxLayout(orientation='vertical', size_hint=(1, 1))
 
-        self.info_layout.add_widget(TagEditor.FileInfoLabel("Press Escape To Exit"))
-
-        for widget in [self.image_cover_art,
-                       self.label_file_name, self.info_layout]:
+        for widget in [self.image_cover_art, self.label_file_name]:
             self.music_file_info_layout.add_widget(widget)
+
+        self.info_layout.add_widget(Kivy_Image(source=TagEditor.__ESCAPE_BUTTON,
+                                               size_hint=(None, None), size=(600, 200),
+                                               pos_hint={'center': True, 'bottom': True}))
+
+        self.music_file_info_layout.add_widget(self.info_layout)
 
         self.text_input_dict = dict()
 
@@ -328,7 +331,7 @@ class TagEditor(App, BoxLayout):
         if to_return:
             return
         with suppress(id3.error):
-            file.clear()
+            file.delete()
             file.add_tags()
 
         if not self.image_cover_art.source == TagEditor.__DEFAULT_TAG_COVER:
@@ -354,7 +357,7 @@ class TagEditor(App, BoxLayout):
             title = music_file['title'][0]
 
             self.file_name = self.naming_option.format(Artist=artist, Album=album, Title=title)
-            self.file_name = f"{os.path.dirname(self.file_path[0])}\\{self.file_name}.mp3"
+            self.file_name = rf"{os.path.dirname(self.file_path[0])}\{self.file_name}.mp3"
             os.rename(self.file_path[0], self.file_name)
             self.file_path[0] = self.file_name
 
@@ -485,9 +488,9 @@ class TagEditor(App, BoxLayout):
         """
         # making window non-resizable
         Config.set('graphics', 'resizable', False)
+        Config.set('graphics', 'borderless', True)
 
         # window style values
-        gwl_style_border = 0x00800000
         gwl_style_dlgframe = 0x00400000
         gwl_style_sysmenu = 0x00080000
         gwl_style_thickframe = 0x00040000
@@ -495,14 +498,14 @@ class TagEditor(App, BoxLayout):
         gwl_style_minimizebox = 0x00020000
         gwl_style_maximizebox = 0x00010000
 
-        gwl_style_caption = gwl_style_border | gwl_style_dlgframe
+        gwl_style_caption = gwl_style_dlgframe
 
         # Retrieves a handle to the top - level window whose class name and window name match the
         # specified strings.
         window_handler = win32gui.FindWindow(None, self.title)
 
         style = win32gui.GetWindowLong(window_handler, win32con.GWL_STYLE)
-        style = style & (gwl_style_border | gwl_style_caption | gwl_style_thickframe |
+        style = style & (gwl_style_caption | gwl_style_thickframe |
                          gwl_style_minimizebox | gwl_style_maximizebox | gwl_style_sysmenu)
         win32gui.SetWindowLong(window_handler, win32con.GWL_STYLE, style)
 
@@ -510,6 +513,7 @@ class TagEditor(App, BoxLayout):
         win32gui.SetWindowLong(window_handler, win32con.GWL_EXSTYLE,
                                win32gui.GetWindowLong(window_handler, win32con.GWL_EXSTYLE) |
                                win32con.WS_EX_LAYERED)
+
         winxpgui.SetLayeredWindowAttributes(window_handler, win32api.RGB(0, 0, 0), 200,
                                             win32con.LWA_ALPHA)
 
@@ -521,18 +525,22 @@ class TagEditor(App, BoxLayout):
             this will be called when the app will exit
             and it will delete any temporary directory created
         """
-        super().on_stop()
         if self.to_delete is not None and os.path.exists(self.to_delete):
             for directory in TagEditor.TO_DELETE:
                 shutil.rmtree(directory)
+        super().on_stop()
 
 
 def main():
     """
         Main Function
     """
-    tag_editor = TagEditor()
-    tag_editor.run()
+    try:
+        tag_editor = TagEditor()
+        tag_editor.run()
+
+    except Exception as exception:
+        print(exception, file=open("error.txt", 'w+'))
 
 
 if __name__ == '__main__':
