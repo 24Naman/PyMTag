@@ -19,7 +19,7 @@
 import os.path
 import tempfile
 from contextlib import suppress
-from typing import AnyStr
+from typing import AnyStr, Tuple
 
 import win32con
 # noinspection PyProtectedMember
@@ -34,12 +34,15 @@ from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.spinner import Spinner
 from kivy.uix.textinput import TextInput
+from kivy.uix.widget import Widget
 
 from mutagen import id3, File
 from mutagen.easyid3 import EasyID3
 # noinspection PyProtectedMember
 from mutagen.id3 import APIC, ID3
 from mutagen.mp3 import MP3
+
+from win10toast import ToastNotifier
 
 import win32api
 import win32gui
@@ -88,6 +91,27 @@ class TagEditor(App, BoxLayout):
             self.text = f"[b][i][size=15][color=000000]{os.path.basename(value)}[/color][/font]" \
                         f"[/i][/b]"
 
+    @staticmethod
+    def return_popup(title: AnyStr, content: Widget, size: Tuple, size_hint=(None, None)) -> Popup:
+        """
+            This method is for creating a unified Popup which will have a similar design
+            throughout the application
+
+        :param title: Title of the popup
+        :type title: str
+        :param content: content to be put in the popup
+        :type content: Widget
+        :param size: size of the Popup
+        :type size: tuple
+        :param size_hint: size hint of the Popup wrt to the parent
+        :type size_hint: tuple; default=(None, None)
+        :return: the generated Popup
+        :rtype: Popup
+        """
+        popup = Popup(title=title, content=content, size=size, size_hint=size_hint,
+                      title_align='center')
+        return popup
+
     def __init__(self, **kwargs):
         """
 
@@ -105,7 +129,7 @@ class TagEditor(App, BoxLayout):
                                                 pos_hint={'top': True, 'center_x': True})
         self.music_file_tag_layout = BoxLayout(orientation='vertical', size_hint=(0.5, 1))
 
-        self.image_cover_art = Image(source=TagEditor.__DEFAULT_TAG_COVER)
+        self.image_cover_art = Image(source=r'extras/default_music.png')
         self.label_file_name = TagEditor.FileInfoLabel('Open A File')
         self.button_album_art_change = Button(text="Album Art Options", size_hint=(0.25, 0.1),
                                               pos_hint={'center_x': 0.5},
@@ -248,6 +272,10 @@ class TagEditor(App, BoxLayout):
             file_dialog.GetFileName(), file_dialog.GetPathNames(), file_dialog.GetFileExt()
 
         if any([self.file_name == '', self.file_path == [], self.file_extension == '']):
+            win_notification = ToastNotifier()
+            win_notification.show_toast(self.title, "File open operation cancelled",
+                                        icon_path=TagEditor.__DEFAULT_TAG_COVER,
+                                        duration=5)
             return
 
         try:
@@ -292,8 +320,8 @@ class TagEditor(App, BoxLayout):
         """
 
         if not TagEditor.FILE_OPENED:
-            Popup(title='No file opened', content=Label(text="Please open a file..."),
-                  size_hint=(None, None), size=(500, 100)).open()
+            self.return_popup(title='No file opened', content=Label(text="Please open a file..."),
+                              size_hint=(None, None), size=(500, 100)).open()
             return
 
         file = None
@@ -301,8 +329,8 @@ class TagEditor(App, BoxLayout):
         try:
             file = MP3(self.file_path[0], ID3=ID3)
         except IndexError:
-            Popup(title="Error", content=Label(text='Please Open a file'), size_hint=(None, None),
-                  size=(200, 200)).open()
+            self.return_popup(title="Error", content=Label(text='Please Open a file'),
+                              size_hint=(None, None), size=(200, 200)).open()
             to_return = True
 
         if to_return:
@@ -338,8 +366,8 @@ class TagEditor(App, BoxLayout):
             os.rename(self.file_path[0], self.file_name)
             self.file_path[0] = self.file_name
 
-        Popup(title='MP3 File Saved', content=Label(text=f'{self.file_name} Saved'),
-              size_hint=(None, None), size=(800, 200)).open()
+        self.return_popup(title='MP3 File Saved', content=Label(text=f'{self.file_name} Saved'),
+                          size=(800, 200)).open()
 
         self.label_file_name.pretty_text = os.path.basename(self.file_name)
 
@@ -356,8 +384,8 @@ class TagEditor(App, BoxLayout):
         """
 
         if not TagEditor.FILE_OPENED:
-            Popup(title='No file opened', content=Label(text="Please open a file..."),
-                  size_hint=(None, None), size=(500, 100)).open()
+            self.return_popup(title='No file opened', content=Label(text="Please open a file..."),
+                              size=(500, 100)).open()
             return
 
         button_local_picker = Button(text='Local Filesystem')
@@ -373,8 +401,8 @@ class TagEditor(App, BoxLayout):
             widget.bind(on_press=func)
             art_button_layout.add_widget(widget)
 
-        art_picker = Popup(title='Select Album Art', content=art_button_layout,
-                           size_hint=(None, None), size=(200, 200))
+        art_picker = self.return_popup(title='Select Album Art', content=art_button_layout,
+                                       size=(200, 200))
 
         art_picker.open()
 
@@ -417,9 +445,10 @@ class TagEditor(App, BoxLayout):
         :type _:
         """
         if self.text_input_dict['album'].text == "":
-            Popup(title='Empty Fields', content=Label(text="Please fill Album and Artist field to "
-                                                           "perform an auto search of album art"),
-                  size_hint=(None, None), size=(500, 100)).open()
+            self.return_popup(title='Empty Fields',
+                              content=Label(text="Please fill Album and Artist field to perform "
+                                                 "an auto search of album art"),
+                              size=(500, 100)).open()
             return
 
         # Google advance search query; tbm=isch -> image search; image size = 500*500
