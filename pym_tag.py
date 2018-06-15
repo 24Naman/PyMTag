@@ -6,8 +6,8 @@
 
     GUI Tag editor for MP3 file.
     It supports Tag editing using mutagen library, renaming the file based on its ID3 attributes,
+    It supports Tag editing using mutagen library, renaming the file based on its ID3 attributes,
     changing album art using local file system or using Internet search or removing it completely.
-
 
 """
 
@@ -27,7 +27,6 @@ from kivy import Config
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.bubble import Bubble
 from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.uix.label import Label
@@ -131,7 +130,7 @@ class TagEditor(App, BoxLayout):
 
         self.image_cover_art = Image(source=TagEditor.__DEFAULT_TAG_COVER)
         self.label_file_name = TagEditor.FileInfoLabel('Open A File')
-        self.button_album_art_change = Button(text="Album Art Options", size_hint=(0.25, 0.1),
+        self.button_album_art_change = Button(text="Options", size_hint=(0.25, 0.1),
                                               pos_hint={'center_x': 0.5},
                                               background_color=(255, 0, 0, 0.4),
                                               background_normal='')
@@ -146,9 +145,9 @@ class TagEditor(App, BoxLayout):
         keys_hints_dict = {'title': 'Title', 'artist': 'Artists', 'album': 'Album',
                            'albumartist': 'Album Artists', 'date': 'Year', 'genre': 'Genre'}
 
-        for key in keys_hints_dict:
+        for key, value in keys_hints_dict.items():
             self.text_input_dict[key] = TextInput(hint_text_color=[26, 12, 232, 1],
-                                                  hint_text=keys_hints_dict[key], multiline=False,
+                                                  hint_text=value, multiline=False,
                                                   font_size='20sp',
                                                   background_color=(0, 255, 255, 0.8))
 
@@ -158,15 +157,6 @@ class TagEditor(App, BoxLayout):
                                   background_normal='')
         self.button_reset = Button(text='Reset', background_color=(255, 0, 0, 1),
                                    background_normal='')
-
-        self.bubble_button = {
-            'button_local': Button(text='Pick Image from Local File System'),
-            'button_google': Button(text='Download Image from Google')
-        }
-
-        search_bubble = Bubble(orientation='horizontal')
-        for widget in [self.bubble_button['button_local'], self.bubble_button['button_google']]:
-            search_bubble.add_widget(widget)
 
         self.main_layout.add_widget(self.music_file_info_layout)
         self.main_layout.add_widget(self.music_file_tag_layout)
@@ -236,8 +226,10 @@ class TagEditor(App, BoxLayout):
             self.text_input_dict[key].text = ''
         if os.path.exists(os.path.join(os.getcwd(), TagEditor.__DEFAULT_TAG_COVER)):
             self.image_cover_art.source = TagEditor.__DEFAULT_TAG_COVER
+            self.image_cover_art.reload()
         else:
             self.image_cover_art.clear_widgets()
+
         TagEditor.FILE_OPENED = False
 
         self.to_delete.cleanup()
@@ -289,6 +281,9 @@ class TagEditor(App, BoxLayout):
                     img.write(mp3_file['APIC:Cover'].data)
 
             self.image_cover_art.source = os.path.join(self.to_delete.name, 'image.jpeg')
+            print(os.path.exists(os.path.join(self.to_delete.name, 'image.jpeg')),
+                  file=open("log.txt", 'w+'))
+            self.image_cover_art.reload()
 
         self.title += f" -> {self.file_name}"
         self.label_file_name.pretty_text = self.file_name
@@ -385,13 +380,15 @@ class TagEditor(App, BoxLayout):
         button_local_picker = Button(text='Local Filesystem')
         button_google_search = Button(text='Search With Google')
         button_art_remove = Button(text='Remove Album Art')
+        button_extract_art = Button(text='Extract The Album Art')
 
         art_button_layout = BoxLayout(orientation='vertical')
 
         # binding function to buttons in the popup
-        for widget, func in zip((button_google_search, button_local_picker, button_art_remove),
+        for widget, func in zip((button_google_search, button_local_picker, button_art_remove,
+                                 button_extract_art),
                                 (self.album_art_google, self.album_art_local,
-                                 self.album_art_remove)):
+                                 self.album_art_remove, self.album_art_extract)):
             widget.bind(on_press=func)
             art_button_layout.add_widget(widget)
 
@@ -430,6 +427,7 @@ class TagEditor(App, BoxLayout):
         # assigning the mp3 cover art widget's source to selected image path
         if not file_dialog.GetPathNames()[0] == "":
             self.image_cover_art.source = file_dialog.GetPathNames()[0]
+            self.image_cover_art.reload()
 
     def album_art_google(self, _: Button):
         """
@@ -472,15 +470,25 @@ class TagEditor(App, BoxLayout):
                 file.pop('APIC:')
 
         finally:
-            self.image_cover_art.clear_widgets()
+            self.image_cover_art.reload()
 
+    # TODO implement this method
+    def album_art_extract(self, _: Button):
+        """
+            Extracting Album art and saving to disc
+        :param _:
+        :type _:
+        """
+        pass
+
+    # TODO implement this method
     def album_art_all_songs(self, album_name: AnyStr, album_artist_name: AnyStr):
         """
             Apply album art to all songs of the same album and artist
         """
         pass
 
-    def on_start(self):
+    def on_start_app(self):
         """
             this will be called when the app will start
             and it will do perform necessary modification
@@ -534,6 +542,7 @@ def main():
     """
         Main Function
     """
+
     tag_editor = TagEditor()
     tag_editor.run()
 
