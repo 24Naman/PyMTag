@@ -16,6 +16,7 @@
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=c-extension-no-member
 # pylint: disable=no-name-in-module
+import random
 
 from kivy.logger import Logger
 Logger.disabled = True
@@ -74,6 +75,7 @@ class TagEditor(App, BoxLayout):
               "artist-album-title": "{Artist} - {Album} - {Title}",
               "title-album": "{Title} - {Album}"}
 
+    # noinspection SpellCheckingInspection
     class _Constants(OrderedDict):
         """
             This class is for providing constants
@@ -92,7 +94,8 @@ class TagEditor(App, BoxLayout):
 
             self.window_title = "Musical - Music Tag Editor"
 
-            self.default_tag_cover = os.path.join('extras', 'python.png')
+            tag_covers = ['default_music_one.png', 'default_music_two.png']
+            self.default_tag_cover = os.path.join('extras', 'images', random.choice(tag_covers))
 
         def __getitem__(self, item) -> AnyStr:
             return self.__dict__[item]
