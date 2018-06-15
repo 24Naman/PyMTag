@@ -25,7 +25,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.bubble import Bubble
 from kivy.uix.button import Button
 from kivy.uix.effectwidget import EffectWidget, InvertEffect
-from kivy.uix.image import Image as Kivy_Image
+from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.spinner import Spinner
@@ -64,7 +64,7 @@ class TagEditor(App, BoxLayout):
     __DEFAULT_TAG_COVER = r'extras/default_music.png'
     __ESCAPE_BUTTON = r'extras/escape_label.png'
 
-    class ImageButton(ButtonBehavior, Kivy_Image):
+    class ImageButton(Image, ButtonBehavior):
         """
             Class for giving Button characteristics to Image
         """
@@ -126,21 +126,24 @@ class TagEditor(App, BoxLayout):
 
         # layouts
         self.main_layout = BoxLayout(orientation='horizontal')
-        self.music_file_info_layout = BoxLayout(orientation='vertical', pos_hint={'top': True,
-                                                                                  'center_x': True})
-        self.music_file_tag_layout = BoxLayout(orientation='vertical')
+        self.music_file_info_layout = BoxLayout(orientation='vertical', size_hint=(0.5, 1),
+                                                pos_hint={'top': True, 'center_x': True})
+        self.music_file_tag_layout = BoxLayout(orientation='vertical', size_hint=(0.5, 1))
 
-        self.image_cover_art = TagEditor.ImageButton()
+        self.image_cover_art = Image(source=TagEditor.default_tag_image())
         self.label_file_name = TagEditor.FileInfoLabel('Open A File')
+        self.button_album_art_change = Button(text="Album Art Options", size_hint=(0.25, 0.1),
+                                              pos_hint={'center_x': 0.5},
+                                              background_color=(255, 0, 0, 1), background_normal='')
 
         self.info_layout = BoxLayout(orientation='vertical', size_hint=(1, 1))
 
-        for widget in [self.image_cover_art, self.label_file_name]:
+        for widget in [self.image_cover_art, self.button_album_art_change, self.label_file_name]:
             self.music_file_info_layout.add_widget(widget)
 
-        self.info_layout.add_widget(Kivy_Image(source=TagEditor.__ESCAPE_BUTTON,
-                                               size_hint=(None, None), size=(600, 200),
-                                               pos_hint={'center': True, 'bottom': True}))
+        self.info_layout.add_widget(Image(source=TagEditor.__ESCAPE_BUTTON,
+                                          size_hint=(None, None), size=(600, 200),
+                                          pos_hint={'center_x': 0.725, 'bottom': True}))
 
         self.music_file_info_layout.add_widget(self.info_layout)
 
@@ -208,7 +211,7 @@ class TagEditor(App, BoxLayout):
         self.button_open.bind(on_press=self.file_open)
         self.button_reset.bind(on_press=self.reset)
         self.button_save.bind(on_press=self.save_file)
-        self.image_cover_art.bind(on_press=self.album_art_manager)
+        self.button_album_art_change.bind(on_press=self.album_art_manager)
 
         self.file_name, self.file_path, self.file_extension = str(), list(), str()
 
@@ -243,7 +246,7 @@ class TagEditor(App, BoxLayout):
 
         for key in self.text_input_dict:
             self.text_input_dict[key].text = ''
-        if os.path.exists(TagEditor.__DEFAULT_TAG_COVER):
+        if os.path.exists(os.path.join(os.getcwd(), TagEditor.__DEFAULT_TAG_COVER)):
             self.image_cover_art.source = TagEditor.__DEFAULT_TAG_COVER
         else:
             self.image_cover_art.clear_widgets()
@@ -314,6 +317,7 @@ class TagEditor(App, BoxLayout):
         :return:
         :rtype:
         """
+
         if not TagEditor.FILE_OPENED:
             Popup(title='No file opened', content=Label(text="Please open a file..."),
                   size_hint=(None, None), size=(500, 100)).open()
@@ -336,8 +340,8 @@ class TagEditor(App, BoxLayout):
 
         if not self.image_cover_art.source == TagEditor.__DEFAULT_TAG_COVER:
             with open(self.image_cover_art.source, 'rb') as alb_art:
-                file.tags.add(
-                    APIC(encoding=1, mime='image/png', type=3, desc=u'Cover', data=alb_art.read()))
+                file.tags.add(APIC(encoding=1, mime='image/png', type=3, desc=u'Cover',
+                                   data=alb_art.read()))
 
         file.save()
 
@@ -350,7 +354,7 @@ class TagEditor(App, BoxLayout):
 
         self.file_name = self.file_path[0]
 
-        # "no-rename"
+        # for option "no-rename"
         if self.naming_option != list(TagEditor.rename.keys())[0]:
             artist = music_file['artist'][0]
             album = music_file['album'][0]
@@ -440,8 +444,8 @@ class TagEditor(App, BoxLayout):
         :type _:
         """
         if self.text_input_dict['album'].text == "":
-            Popup(title='Empty Field', content=Label(text="Please fill Album and Artist field to "
-                                                          "perform an auto search of album art"),
+            Popup(title='Empty Fields', content=Label(text="Please fill Album and Artist field to "
+                                                           "perform an auto search of album art"),
                   size_hint=(None, None), size=(500, 100)).open()
             return
 
@@ -480,13 +484,12 @@ class TagEditor(App, BoxLayout):
         """
         pass
 
-    # noinspection SpellCheckingInspection
     def on_start(self):
         """
             this will be called when the app will start
             and it will do perform necessary modification
         """
-        # making window non-resizable
+        # making window non-resizable and borderless
         Config.set('graphics', 'resizable', False)
         Config.set('graphics', 'borderless', True)
 
