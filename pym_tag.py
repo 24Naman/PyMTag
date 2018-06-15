@@ -640,7 +640,7 @@ class TagEditor(App, BoxLayout):
         """
 
         # ## Window Custom Configuration ## #
-        # making window non-resizable and borderless
+        # making window non-resizable and border less
         Config.set('graphics', 'resizable', False)
         Config.set('graphics', 'borderless', True)
 
