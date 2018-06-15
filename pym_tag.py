@@ -24,7 +24,7 @@ from collections import OrderedDict
 from contextlib import suppress, contextmanager
 from functools import partial
 from glob import glob
-from typing import AnyStr, Tuple, Iterable
+from typing import AnyStr, Tuple, Iterable, Iterator
 
 import shutil
 from urllib.parse import urlunparse, quote, urlencode
@@ -93,11 +93,11 @@ class TagEditor(App, BoxLayout):
         def __getitem__(self, item) -> AnyStr:
             return self.__dict__[item]
 
-        def __iter__(self):
+        def __iter__(self) -> Iterator[str]:
             for name in ['title', 'artist', 'album', 'albumartist', 'date', 'genre']:
                 yield name
 
-        def __dir__(self) -> Iterable[str]:
+        def __dir__(self) -> Iterable[AnyStr]:
             return []
 
     constants = _Constants()
@@ -116,14 +116,14 @@ class TagEditor(App, BoxLayout):
             super().__init__(**kwargs)
 
         @property
-        def pretty_text(self):
+        def pretty_text(self) -> str:
             """
                 Getter for text
             """
             return self.text
 
         @pretty_text.setter
-        def pretty_text(self, value):
+        def pretty_text(self, value: str) -> None:
             self.text = f"[b][i][size=15][color=000000]{os.path.basename(value)}[/color][/font]" \
                         f"[/i][/b]"
 
@@ -156,14 +156,12 @@ class TagEditor(App, BoxLayout):
                              size=(600, 200), pos_hint={'center_x': 0.725, 'bottom': True})):
             self.music_file_info_layout.add_widget(widget)
 
-        self.text_input_dict = dict()
-
-        for key in TagEditor.constants:
-            self.text_input_dict[key] = TextInput(hint_text_color=[26, 12, 232, 1],
-                                                  hint_text=TagEditor.constants[key],
-                                                  multiline=False,
-                                                  font_size='20sp',
-                                                  background_color=(0, 255, 255, 0.8))
+        self.text_input_dict = {key: TextInput(hint_text_color=[26, 12, 232, 1],
+                                               hint_text=TagEditor.constants[key],
+                                               multiline=False,
+                                               font_size='20sp',
+                                               background_color=(0, 255, 255, 0.8))
+                                for key in TagEditor.constants}
 
         self.checkbox_layout = BoxLayout(orientation='horizontal')
         self.checkbox_all_albums_art = CheckBox(active=True, color=[0, 0, 0, 1])
@@ -222,12 +220,13 @@ class TagEditor(App, BoxLayout):
     def __repr__(self) -> str:
         return "TagEditor Class"
 
+    @staticmethod
     @contextmanager
-    def saving(self, file):
+    def saving(file: File):
         """
             calls save method on the object
-        :param file:
-        :type file:
+        :param file: file to be saved
+        :type file: File
         """
         yield file
         file.save()
@@ -267,11 +266,11 @@ class TagEditor(App, BoxLayout):
         for key in self.text_input_dict:
             self.music_file_tag_layout.add_widget(widget=self.text_input_dict[key])
 
-        for widget in [self.naming_option_spinner, self.checkbox_layout, self.layout_button]:
+        for widget in self.naming_option_spinner, self.checkbox_layout, self.layout_button:
             self.music_file_tag_layout.add_widget(widget)
 
-        self.main_layout.add_widget(self.music_file_info_layout)
-        self.main_layout.add_widget(self.music_file_tag_layout)
+        for widget in self.music_file_info_layout, self.music_file_tag_layout:
+            self.main_layout.add_widget(widget)
 
         self.add_widget(self.main_layout)
 
@@ -297,7 +296,7 @@ class TagEditor(App, BoxLayout):
         self.to_delete.cleanup()
         self.to_delete = tempfile.TemporaryDirectory()
 
-    def file_open(self, _: Button):
+    def file_open(self, _: Button) -> None:
         """
             Opens a Windows file open dialog.
             It will use '.mp3' extension for file types
@@ -337,10 +336,7 @@ class TagEditor(App, BoxLayout):
 
         if any(['APIC:Cover' in mp3_file, 'APIC:' in mp3_file]):
             with open(os.path.join(self.to_delete.name, 'image.jpeg'), 'wb') as img:
-                if 'APIC:' in mp3_file:
-                    img.write(mp3_file['APIC:'].data)
-                else:
-                    img.write(mp3_file['APIC:Cover'].data)
+                img.write(mp3_file['APIC:' if 'APIC:' in mp3_file else 'APIC:Cover'].data)
 
             self.image_cover_art.source = os.path.join(self.to_delete.name, 'image.jpeg')
             self.image_cover_art.reload()
@@ -357,7 +353,7 @@ class TagEditor(App, BoxLayout):
 
         TagEditor.FILE_OPENED = True
 
-    def save_file(self, _: Button):
+    def save_file(self, _: Button) -> None:
         """
         Save file and rename it according to the option selected by the user.
 
@@ -381,27 +377,26 @@ class TagEditor(App, BoxLayout):
                                size_hint=(None, None), size=(200, 200)).open()
             to_return = True
 
-        if to_return:
-            return
-        with suppress(id3.error):
-            file.delete()
-            file.add_tags()
+        with self.saving(file) as file:
+            if to_return:
+                return
+            with suppress(id3.error):
+                file.delete()
+                file.add_tags()
 
-        if not self.image_cover_art.source == TagEditor.constants.default_tag_cover:
-            with open(self.image_cover_art.source, 'rb') as alb_art:
-                file.tags.add(APIC(encoding=1, mime='image/png', type=3, desc=u'Cover',
-                                   data=alb_art.read()))
+            if not self.image_cover_art.source == TagEditor.constants.default_tag_cover:
+                with open(self.image_cover_art.source, 'rb') as alb_art:
+                    file.tags.add(APIC(encoding=1, mime='image/png', type=3, desc=u'Cover',
+                                       data=alb_art.read()))
 
-        else:
-            with suppress(KeyError):
-                if 'APIC:' in file:
-                    file.tags.pop('APIC:')
-                else:
-                    file.tags.pop('APIC:Cover')
+            else:
+                with suppress(KeyError):
+                    if 'APIC:' in file:
+                        file.tags.pop('APIC:')
+                    else:
+                        file.tags.pop('APIC:Cover')
 
-            self.checkbox_all_albums_art.active = False
-
-        file.save()
+                self.checkbox_all_albums_art.active = False
 
         with self.saving(EasyID3(self.file_path[0])) as music_file:
             # adding tags to the file
@@ -410,7 +405,7 @@ class TagEditor(App, BoxLayout):
 
         self.file_name = self.file_path[0]
 
-        # if the option is "no-rename": "Don't Rename"
+        # if the option is not "no-rename": "Don't Rename"
         if self.naming_opt != list(TagEditor.rename.keys())[0]:
             artist = music_file['artist'][0]
             album = music_file['album'][0]
@@ -436,7 +431,7 @@ class TagEditor(App, BoxLayout):
         # resetting the widgets after saving the file
         self.reset_widgets(None)
 
-    def album_art_manager(self, _: Button):
+    def album_art_manager(self, _: Button) -> None:
         """
             Function to grab the album art;
             it will offer three choice,
@@ -476,7 +471,7 @@ class TagEditor(App, BoxLayout):
 
         art_picker.open()
 
-    def album_art_local(self, _: Button, art_picker: Popup, downloaded=False):
+    def album_art_local(self, _: Button, art_picker: Popup, downloaded=False) -> None:
         """
         Allows to selected the album art from the local file system.
         Opens the file dialog for selecting jpeg or png or jpg file
@@ -496,15 +491,10 @@ class TagEditor(App, BoxLayout):
         file_types = "JPEG File (*.jpeg), jpg File (*.jpg) | *.jpg; *.jpeg; | PNG File (*.png) | " \
                      "*.png ||"
 
-        if not downloaded:
-            # True for fileopen and False for filesave dialog
-            file_dialog = CreateFileDialog(True, None, None, 0, file_types, None)
-        else:
-            # noinspection SpellCheckingInspection
-            # opening file dialog in Downloads folder if the image was searched online
-            file_dialog = CreateFileDialog(True, os.path.join(os.getenv('USERPROFILE',
-                                                                        'Downloads')), None,
-                                           0, file_types, None)
+        # True for fileopen and False for filesave dialog
+        # opening file dialog in Downloads folder if the image was searched online
+        file_dialog = CreateFileDialog(True, os.path.join(os.getenv('USERPROFILE', 'Downloads'))
+                                       if downloaded else None, None, 0, file_types, None)
 
         file_dialog.DoModal()
 
@@ -513,7 +503,7 @@ class TagEditor(App, BoxLayout):
             self.image_cover_art.source = file_dialog.GetPathNames()[0]
             self.image_cover_art.reload()
 
-    def album_art_google(self, _: Button, art_picker: Popup):
+    def album_art_google(self, _: Button, art_picker: Popup) -> None:
         """
         this method will open the browser (default Google Chrome) and search for the album art...
 
@@ -532,7 +522,8 @@ class TagEditor(App, BoxLayout):
 
         # Google advance search query; tbm=isch -> image search; image size = 500*500
         search_url = urlunparse(('https', 'www.google.co.in', quote('search'), '',
-                                 urlencode({'tbm': 'isch', 'tbs': 'isz:ex,iszw:500,iszh:500',
+                                 urlencode({'tbm': 'isch',
+                                            'tbs': 'isz:ex,iszw:500,iszh:500',
                                             'as_q': f"{self.text_input_dict['albumartist'].text} "
                                                     f"{self.text_input_dict['album'].text} "
                                                     f"album art"}), ''))
@@ -543,7 +534,7 @@ class TagEditor(App, BoxLayout):
 
         self.album_art_local(_, downloaded=True, art_picker=art_picker)
 
-    def album_art_remove(self, _: Button, art_picker: Popup):
+    def album_art_remove(self, _: Button, art_picker: Popup) -> None:
         """
             Function for removing the album art from the MP3 File
         :param art_picker:
@@ -566,7 +557,7 @@ class TagEditor(App, BoxLayout):
         finally:
             self.image_cover_art.reload()
 
-    def album_art_extract(self, _: Button, art_picker: Popup):
+    def album_art_extract(self, _: Button, art_picker: Popup) -> None:
         """
             Extracting Album art and saving to disc
         :param art_picker:
@@ -582,7 +573,7 @@ class TagEditor(App, BoxLayout):
 
         shutil.copy(self.image_cover_art.source, file_path[0])
 
-    def album_art_all_songs(self, album: AnyStr, album_artist: AnyStr):
+    def album_art_all_songs(self, album: AnyStr, album_artist: AnyStr) -> None:
         """
             Apply album art to all songs of the same album and artist
         :param album: the album name which album art has to be changed
