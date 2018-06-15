@@ -49,7 +49,6 @@ class TagEditor(App, BoxLayout):
 
     # pylint: disable=too-many-instance-attributes
     # pylint: disable=c-extension-no-member
-    # pylint: disable=global-variable-undefined
 
     # class attributes
     # File renaming options
@@ -268,27 +267,25 @@ class TagEditor(App, BoxLayout):
         if any([self.file_name == '', self.file_path == [], self.file_extension == '']):
             return
 
-        global AUDIO_FILE
-        global MP3_FILE
         try:
-            AUDIO_FILE, MP3_FILE = EasyID3(self.file_path[0]), MP3(self.file_path[0])
+            audio_file, mp3_file = EasyID3(self.file_path[0]), MP3(self.file_path[0])
         except mutagen.id3.ID3NoHeaderError:
             file = mutagen.File(self.file_path[0], easy=True)
             file.add_tags()
             file.save()
-            AUDIO_FILE, MP3_FILE = EasyID3(self.file_path[0]), MP3(self.file_path[0])
+            audio_file, mp3_file = EasyID3(self.file_path[0]), MP3(self.file_path[0])
 
-        if any(['APIC:Cover' in MP3_FILE, 'APIC:' in MP3_FILE]):
+        if any(['APIC:Cover' in mp3_file, 'APIC:' in mp3_file]):
             _temp_dir_name = rf"{os.getcwd()}\{self.file_name}{round(time.time())}"
             os.mkdir(_temp_dir_name)
             self.to_delete = True
             TagEditor.TO_DELETE.append(_temp_dir_name)
 
             with open(f'{_temp_dir_name}/image.jpg', 'wb') as img:
-                if 'APIC:' in MP3_FILE:
-                    img.write(MP3_FILE['APIC:'].data)
+                if 'APIC:' in mp3_file:
+                    img.write(mp3_file['APIC:'].data)
                 else:
-                    img.write(MP3_FILE['APIC:Cover'].data)
+                    img.write(mp3_file['APIC:Cover'].data)
 
             self.image_cover_art.source = f'{_temp_dir_name}/image.jpg'
 
@@ -297,9 +294,9 @@ class TagEditor(App, BoxLayout):
 
         with suppress(KeyError):
             for key in self.text_input_dict:
-                if not AUDIO_FILE.get(key, self.text_input_dict[key].text) == "":
+                if not audio_file.get(key, self.text_input_dict[key].text) == "":
                     self.text_input_dict[key].text = \
-                        AUDIO_FILE.get(key, self.text_input_dict[key].text)[0]
+                        audio_file.get(key, self.text_input_dict[key].text)[0]
 
         TagEditor.FILE_OPENED = True
 
