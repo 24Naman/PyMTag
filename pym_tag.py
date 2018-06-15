@@ -24,7 +24,7 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.bubble import Bubble
 from kivy.uix.button import Button
 from kivy.uix.effectwidget import EffectWidget, InvertEffect
-from kivy.uix.image import Image
+from kivy.uix.image import Image as Kivy_Image
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.spinner import Spinner
@@ -62,7 +62,7 @@ class TagEditor(App, BoxLayout):
     TO_DELETE = list()  # to store the list of the temporary directories which are to be deleted
     __DEFAULT_TAG_COVER = r'extras/default_music.png'
 
-    class ImageButton(ButtonBehavior, Image):
+    class ImageButton(ButtonBehavior, Kivy_Image):
         """
             Class for giving Button characteristics to Image
         """
@@ -73,7 +73,7 @@ class TagEditor(App, BoxLayout):
 
             # The width should be equal to parent
             kwargs['size_hint_x'] = 1
-            # The width should be half of the parent
+            # The height should be half of the parent
             kwargs['size_hint_y'] = 0.5
             kwargs['width'] = parent_width
 
@@ -173,11 +173,12 @@ class TagEditor(App, BoxLayout):
 
         def naming_option_selector(_, selected_text):
             """
-
+            binding function for the spinner, which assign the selected text to
+            'self.naming_option'
             :param _:
             :type _:
-            :param selected_text:
-            :type selected_text:
+            :param selected_text: the option selected by the user in the Spinner
+            :type selected_text: str
             """
             self.naming_option = selected_text
 
@@ -247,6 +248,8 @@ class TagEditor(App, BoxLayout):
 
     def file_open(self, _: Button):
         """
+            Opens a Windows file open dialog.
+            It will use '.mp3' extension for file types
 
         :param _:
         :type _:
@@ -302,6 +305,7 @@ class TagEditor(App, BoxLayout):
 
     def save_file(self, _: Button) -> object:
         """
+        Save file and rename it according to the option selected by the user.
 
         :param _:
         :type _:
@@ -399,6 +403,11 @@ class TagEditor(App, BoxLayout):
 
     def album_art_local(self, _: Button, downloaded=False):
         """
+        Allows to selected the album art from the local file system.
+        Opens the file dialog for selecting jpeg or png or jpg file
+
+        It will open user's default Downloads folder in case the file is downloaded from the
+        internet
 
         :param _:
         :type _:
