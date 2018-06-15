@@ -27,6 +27,8 @@ from glob import glob
 from typing import AnyStr, Tuple, Iterable
 
 import shutil
+from urllib.parse import urlunparse, quote, urlencode
+
 import win32con
 # noinspection PyProtectedMember
 from kivy import Config
@@ -519,9 +521,11 @@ class TagEditor(App, BoxLayout):
             return
 
         # Google advance search query; tbm=isch -> image search; image size = 500*500
-        search_url = "https://www.google.co.in/search?tbm=isch&tbs=isz:ex,iszw:500,iszh:500&" \
-                     f"as_q={self.text_input_dict['albumartist'].text}+" \
-                     f" {self.text_input_dict['album'].text} album art"
+        search_url = urlunparse(('https', 'www.google.co.in', quote('search'), '',
+                                 urlencode({'tbm': 'isch', 'tbs': 'isz:ex,iszw:500,iszh:500',
+                                            'as_q': f"{self.text_input_dict['albumartist'].text} "
+                                                    f"{self.text_input_dict['album'].text} "
+                                                    f"album art"}), ''))
 
         # open the default web browser to let the user download the image manually
         import webbrowser
