@@ -13,11 +13,7 @@ import time
 from contextlib import suppress
 
 import mutagen
-import win32gui
-
-import win32api
 import win32con
-import winxpgui
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.behaviors import ButtonBehavior
@@ -35,7 +31,10 @@ from mutagen.easyid3 import EasyID3
 from mutagen.id3 import APIC, ID3
 from mutagen.mp3 import MP3
 
+import win32api
+import win32gui
 import win32ui
+import winxpgui
 
 
 class TagEditor(App, BoxLayout):
