@@ -24,7 +24,7 @@ from collections import OrderedDict
 from contextlib import suppress, contextmanager
 from functools import partial
 from glob import glob
-from typing import AnyStr, Tuple, Iterable, Iterator
+from typing import AnyStr, Tuple, Iterator
 
 import shutil
 from urllib.parse import urlunparse, quote, urlencode
@@ -94,11 +94,7 @@ class TagEditor(App, BoxLayout):
             return self.__dict__[item]
 
         def __iter__(self) -> Iterator[str]:
-            for name in ['title', 'artist', 'album', 'albumartist', 'date', 'genre']:
-                yield name
-
-        def __dir__(self) -> Iterable[AnyStr]:
-            return []
+            yield from ['title', 'artist', 'album', 'albumartist', 'date', 'genre']
 
     constants = _Constants()
 
@@ -232,7 +228,8 @@ class TagEditor(App, BoxLayout):
         file.save()
 
     @staticmethod
-    def _return_popup(title: AnyStr, content: Widget, size: Tuple, size_hint=(None, None)) -> Popup:
+    def _return_popup(title: AnyStr, content: Widget, size: Tuple = (500, 100),
+                      size_hint=(None, None)) -> Popup:
         """
             This method is for creating a unified Popup which will have a similar design
             throughout the application
@@ -244,13 +241,12 @@ class TagEditor(App, BoxLayout):
         :param size: size of the Popup
         :type size: tuple
         :param size_hint: size hint of the Popup wrt to the parent
-        :type size_hint: tuple; default=(None, None)
+        :type size_hint: tuple; default=(500, 100)
         :return: the generated Popup
         :rtype: Popup
         """
-        popup = Popup(title=title, content=content, size=size, size_hint=size_hint,
-                      title_align='center')
-        return popup
+        return Popup(title=title, content=content, size=size, size_hint=size_hint,
+                     title_align='center')
 
     def build(self):
         """
@@ -328,7 +324,7 @@ class TagEditor(App, BoxLayout):
             audio_file, mp3_file = EasyID3(self.file_path[0]), MP3(self.file_path[0])
 
         except id3.ID3NoHeaderError:
-            # adding tags if the file has none
+            # adding id3 header tags if the file has none
             with self.saving(File(self.file_path[0], easy=True)) as file:
                 file.add_tags()
 
@@ -365,7 +361,7 @@ class TagEditor(App, BoxLayout):
 
         if not TagEditor.FILE_OPENED:
             self._return_popup(title='No file opened', content=Label(text="Please open a file..."),
-                               size=(500, 100)).open()
+                               ).open()
             return
 
         file = None
@@ -374,7 +370,7 @@ class TagEditor(App, BoxLayout):
             file = MP3(self.file_path[0], ID3=ID3)
         except IndexError:
             self._return_popup(title="Error", content=Label(text='Please Open a file'),
-                               size_hint=(None, None), size=(200, 200)).open()
+                               size=(200, 200)).open()
             to_return = True
 
         with self.saving(file) as file:
@@ -407,7 +403,7 @@ class TagEditor(App, BoxLayout):
 
         # if the option is not "no-rename": "Don't Rename"
         if self.naming_opt != list(TagEditor.rename.keys())[0]:
-            artist = music_file['artist'][0]
+            artist = music_file['albumartist'][0]
             album = music_file['album'][0]
             title = music_file['title'][0]
 
@@ -443,8 +439,8 @@ class TagEditor(App, BoxLayout):
         """
 
         if not TagEditor.FILE_OPENED:
-            self._return_popup(title='No file opened', content=Label(text="Please open a file..."),
-                               size=(500, 100)).open()
+            self._return_popup(title='No file opened', content=Label(text="Please open a file...")
+                               ).open()
             return
 
         # button for the popup
@@ -516,11 +512,10 @@ class TagEditor(App, BoxLayout):
         if self.text_input_dict["album"].text == "":
             self._return_popup(title='Empty Fields',
                                content=Label(text="Please fill Album and Artist field to perform "
-                                                  "an auto search of album art"),
-                               size=(500, 100)).open()
+                                                  "an auto search of album art")).open()
             return
 
-        # Google advance search query; tbm=isch -> image search; image size = 500*500
+        # Google as_q -> advance search query; tbm=isch -> image search; image size = 500*500
         search_url = urlunparse(('https', 'www.google.co.in', quote('search'), '',
                                  urlencode({'tbm': 'isch',
                                             'tbs': 'isz:ex,iszw:500,iszh:500',
