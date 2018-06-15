@@ -22,7 +22,6 @@ from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.bubble import Bubble
 from kivy.uix.button import Button
-from kivy.uix.effectwidget import EffectWidget, InvertEffect
 from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
@@ -58,7 +57,7 @@ class TagEditor(App, BoxLayout):
               "title-album": "{Title} - {Album}"}
 
     FILE_OPENED = False  # to store state of the opened file
-    TO_DELETE = list()  # to store the list of the temporary directories which are to be deleted
+    TO_DELETE: list = list()  # to store the list of temporary directories which are to be deleted
     __DEFAULT_TAG_COVER = r'extras/default_music.png'
     __ESCAPE_BUTTON = r'extras/escape_label.png'
 
@@ -67,8 +66,8 @@ class TagEditor(App, BoxLayout):
             File Info Label
         """
 
-        def __init__(self, text: str, **kwargs):
-            kwargs['text'] = f'[b][i][size=25][color=000000]{text}[/color][/font][/i][/b]'
+        def __init__(self, text: str, **kwargs) -> None:
+            kwargs['text'] = f'[b][i][size=15][color=000000]{text}[/color][/font][/i][/b]'
             kwargs['size_hint_x'] = 1
             kwargs['size_hint_y'] = 0.25
             kwargs['markup'] = True
@@ -84,7 +83,7 @@ class TagEditor(App, BoxLayout):
 
         @pretty_text.setter
         def pretty_text(self, value):
-            self.text = f"[b][i][size=25][color=000000]{os.path.basename(value)}[/color][/font]" \
+            self.text = f"[b][i][size=15][color=000000]{os.path.basename(value)}[/color][/font]" \
                         f"[/i][/b]"
 
     @classmethod
@@ -181,20 +180,14 @@ class TagEditor(App, BoxLayout):
 
         # Button's Layout
         self.layout_button = BoxLayout(orientation='horizontal')
-        effect_widget_one, effect_widget_two, effect_widget_three = \
-            EffectWidget(), EffectWidget(), EffectWidget()
 
-        for effect_widget, widget in zip(
-                (effect_widget_one, effect_widget_two, effect_widget_three),
-                (self.button_open, self.button_save, self.button_reset)):
-            effect_widget.add_widget(widget)
-            effect_widget.effects = [InvertEffect]
-            self.layout_button.add_widget(effect_widget)
+        for widget in self.button_open, self.button_save, self.button_reset:
+            self.layout_button.add_widget(widget)
 
         # button bindings
         for button, binding in zip((self.button_open, self.button_save, self.button_reset,
                                     self.button_album_art_change),
-                                   (self.file_open, self.reset, self.save_file,
+                                   (self.file_open, self.save_file, self.reset,
                                     self.album_art_manager)):
             button.bind(on_press=binding)
 
@@ -288,7 +281,7 @@ class TagEditor(App, BoxLayout):
 
         TagEditor.FILE_OPENED = True
 
-    def save_file(self, _: Button) -> object:
+    def save_file(self, _: Button):
         """
         Save file and rename it according to the option selected by the user.
 
@@ -390,7 +383,7 @@ class TagEditor(App, BoxLayout):
     def album_art_local(self, _: Button, downloaded=False):
         """
         Allows to selected the album art from the local file system.
-        Opens the file dialog for selecting jpeg or png or jpeg file
+        Opens the file dialog for selecting jpeg or png or jpg file
 
         It will open user's default Downloads folder in case the file is downloaded from the
         internet
