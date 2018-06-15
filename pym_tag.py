@@ -180,7 +180,7 @@ class TagEditor(App, BoxLayout):
         # button bindings
         for button, binding in zip((self.button_open, self.button_save, self.button_reset,
                                     self.button_album_art_change),
-                                   (self.file_open, self.save_file, self.reset,
+                                   (self.file_open, self.save_file, self.reset_widgets,
                                     self.album_art_manager)):
             button.bind(on_press=binding)
 
@@ -207,7 +207,7 @@ class TagEditor(App, BoxLayout):
 
         return self
 
-    def reset(self, _):
+    def reset_widgets(self, _):
         """
             Reset all field to original state
         """
@@ -240,7 +240,7 @@ class TagEditor(App, BoxLayout):
         :rtype:
         """
         # True, None for fileopen and False, File_Name for filesave dialog
-        self.reset(None)
+        self.reset_widgets(None)
         file_dialog = CreateFileDialog(True, ".mp3", None, 0, "MP3 Files (*.mp3)|*.mp3", None)
         file_dialog.DoModal()
 
@@ -320,14 +320,14 @@ class TagEditor(App, BoxLayout):
 
         music_file = EasyID3(self.file_path[0])
 
-        # adding tags
+        # adding tags to the file
         for tag in self.text_input_dict:
             music_file[tag] = self.text_input_dict[tag].text
         music_file.save()
 
         self.file_name = self.file_path[0]
 
-        # for option "no-rename"
+        # if the option is "no-rename": "Don't Rename"
         if self.naming_option != list(TagEditor.rename.keys())[0]:
             artist = music_file['artist'][0]
             album = music_file['album'][0]
@@ -345,14 +345,14 @@ class TagEditor(App, BoxLayout):
 
         TagEditor.FILE_OPENED = True
 
-        # resetting after saving the file
-        self.reset(None)
+        # resetting the widgets after saving the file
+        self.reset_widgets(None)
 
     def album_art_manager(self, _: Button):
         """
             Function to grab the album art;
             it will offer three choice,
-            Download from Internet or Pick from local filesystem or delete the cover art
+            Download from Internet or Pick from local filesystem or Remove the cover art
         """
 
         if not TagEditor.FILE_OPENED:
