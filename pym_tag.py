@@ -16,11 +16,8 @@
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=c-extension-no-member
 # pylint: disable=no-name-in-module
+
 import random
-
-from kivy.logger import Logger
-Logger.disabled = True
-
 import os
 import tempfile
 from collections import OrderedDict
