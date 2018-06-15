@@ -13,6 +13,11 @@ import time
 from contextlib import suppress
 
 import mutagen
+import win32gui
+
+import win32api
+import win32con
+import winxpgui
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.behaviors import ButtonBehavior
@@ -134,7 +139,7 @@ class TagEditor(App, BoxLayout):
 
         for key, hint in zip(text_input_keys, text_input_hints):
             self.text_input_dict[key] = TextInput(hint_text=hint, multiline=False,
-                                                  hint_text_color=(1, 1, 1, 1), font_size='25sp',
+                                                  hint_text_color=(1, 1, 1, 1), font_size='20sp',
                                                   background_color=(0, 255, 255, 0.8))
 
         self.button_open = Button(text='Open', background_color=(255, 0, 0, 1),
@@ -199,6 +204,7 @@ class TagEditor(App, BoxLayout):
         :return:
         :rtype:
         """
+        self.icon = "extras/default_music.png"
 
         # window background color
         Window.clearcolor = (255, 215, 0, 1)
@@ -435,6 +441,20 @@ class TagEditor(App, BoxLayout):
         finally:
             self.image_cover_art.clear_widgets()
 
+    def on_start(self):
+        """
+            this will be called when the app will exit
+            and it will do all necessary modification
+        """
+        # making window transparent
+        window_handler = win32gui.FindWindow(None, self.title)
+
+        win32gui.SetWindowLong(window_handler, win32con.GWL_EXSTYLE,
+                               win32gui.GetWindowLong(window_handler, win32con.GWL_EXSTYLE) |
+                               win32con.WS_EX_LAYERED)
+        winxpgui.SetLayeredWindowAttributes(window_handler, win32api.RGB(0, 0, 0), 200,
+                                            win32con.LWA_ALPHA)
+
     def on_stop(self):
         """
             this will be called when the app will exit
@@ -450,7 +470,8 @@ def main():
     """
         Main Function
     """
-    TagEditor().run()
+    tag_editor = TagEditor()
+    tag_editor.run()
 
 
 if __name__ == '__main__':
