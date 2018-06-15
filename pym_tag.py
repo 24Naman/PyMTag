@@ -440,21 +440,26 @@ class TagEditor(App, BoxLayout):
                                size=(500, 100)).open()
             return
 
-        button_local_picker = Button(text='Local Filesystem')
-        button_google_search = Button(text='Search With Google')
-        button_art_remove = Button(text='Remove Album Art')
-        button_extract_art = Button(text='Extract The Album Art')
+        # button for the popup
+        button_local_picker = Button(text='Local Filesystem', background_color=(255, 0, 0, 1),
+                                     background_normal='')
+        button_google_search = Button(text='Search With Google', background_color=(255, 0, 0, 1),
+                                      background_normal='')
+        button_art_remove = Button(text='Remove Album Art', background_color=(255, 0, 0, 1),
+                                   background_normal='')
+        button_extract_art = Button(text='Extract The Album Art', background_color=(255, 0, 0, 1),
+                                    background_normal='')
 
         art_button_layout = BoxLayout(orientation='vertical')
         art_picker = self._return_popup(title='Select Album Art', content=art_button_layout,
                                         size=(200, 200))
 
         # binding function to buttons in the popup
-        for widget, func in zip((button_google_search, button_local_picker, button_art_remove,
-                                 button_extract_art),
-                                (self.album_art_google, self.album_art_local,
-                                 self.album_art_remove, self.album_art_extract)):
-            widget.bind(on_press=partial(func, art_picker=art_picker))
+        for widget, callback in zip((button_google_search, button_local_picker, button_art_remove,
+                                     button_extract_art),
+                                    (self.album_art_google, self.album_art_local,
+                                     self.album_art_remove, self.album_art_extract)):
+            widget.bind(on_press=partial(callback, art_picker=art_picker))
             art_button_layout.add_widget(widget)
 
         art_picker.open()
@@ -468,18 +473,19 @@ class TagEditor(App, BoxLayout):
         internet
 
         :param art_picker:
-        :type art_picker:
+        :type art_picker: Popup
         :param _:
         :type _:
-        :param downloaded:
-        :type downloaded:
+        :param downloaded: this parameter decides open dialog in last opened folder if 'False'
+        otherwise opens in User's Download folder
+        :type downloaded: Boolean
         """
         art_picker.dismiss()
-        # True for fileopen and False for filesave dialog
         file_types = "JPEG File (*.jpeg), jpg File (*.jpg) | *.jpg; *.jpeg; | PNG File (*.png) | " \
                      "*.png ||"
 
         if not downloaded:
+            # True for fileopen and False for filesave dialog
             file_dialog = CreateFileDialog(True, None, None, 0, file_types, None)
         else:
             # noinspection SpellCheckingInspection
@@ -586,12 +592,15 @@ class TagEditor(App, BoxLayout):
             this will be called when the app will start
             and it will do perform necessary modification
         """
-        # Window Custom Configuration #
+
+        # ## Window Custom Configuration ## #
         # making window non-resizable and borderless
         Config.set('graphics', 'resizable', False)
         Config.set('graphics', 'borderless', True)
 
         # window style values
+        # reference ->
+        # https://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx
         gwl_style_dlgframe = 0x00400000
         gwl_style_sysmenu = 0x00080000
         gwl_style_thickframe = 0x00040000
@@ -636,7 +645,6 @@ def main():
     """
         Main Function
     """
-
     TagEditor().run()
 
 
