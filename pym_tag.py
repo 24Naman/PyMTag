@@ -10,13 +10,15 @@
 
     It also supports changing cover art of all MP3 files with same album and album artist as the
     opened file.
-
 """
 
 # ## PyLint custom options: ## #
 # pylint: disable=too-many-instance-attributes
 # pylint: disable=c-extension-no-member
 # pylint: disable=no-name-in-module
+
+from kivy.logger import Logger
+Logger.disabled = True
 
 import os
 import tempfile
@@ -77,8 +79,9 @@ class TagEditor(App, BoxLayout):
             This class is for providing constants
         """
 
-        def __init__(self) -> None:
-            super().__init__()
+        def __init__(self, **kwargs) -> None:
+            super().__init__(**kwargs)
+
             self.title = 'Title'
             self.artist = 'Artist'
             self.album = 'Album'
@@ -89,8 +92,7 @@ class TagEditor(App, BoxLayout):
 
             self.window_title = "Musical - Music Tag Editor"
 
-            self.default_tag_cover = os.path.join('extras', 'default_music.png')
-            self.escape_button = os.path.join('extras', 'escape_label.png')
+            self.default_tag_cover = os.path.join('extras', 'python.png')
 
         def __getitem__(self, item) -> AnyStr:
             return self.__dict__[item]
@@ -149,9 +151,7 @@ class TagEditor(App, BoxLayout):
                                               background_color=(255, 0, 0, 0.4),
                                               background_normal='')
 
-        for widget in (self.image_cover_art, self.button_album_art_change, self.label_file_name,
-                       Image(source=TagEditor.constants.escape_button, size_hint=(None, None),
-                             size=(600, 200), pos_hint={'center_x': 0.725, 'bottom': True})):
+        for widget in (self.image_cover_art, self.button_album_art_change, self.label_file_name):
             self.music_file_info_layout.add_widget(widget)
 
         self.text_input_dict = {key: TextInput(hint_text_color=[26, 12, 232, 1],
@@ -161,12 +161,19 @@ class TagEditor(App, BoxLayout):
                                                background_color=(0, 255, 255, 0.8))
                                 for key in TagEditor.constants}
 
+        # checkbox function which will be called when checkbox is selected
+        def _on_checkbox_select(_widget: Widget, _):
+            if not TagEditor.FILE_OPENED:
+                self._return_popup(title="No File opened", content=Label(text="No File Opened"),)\
+                    .open()
+
         self.checkbox_layout = BoxLayout(orientation='horizontal')
         self.switch_layout = BoxLayout(orientation='horizontal')
         self.checkbox_all_albums_art = CheckBox(active=True, color=[0, 0, 0, 1])
+        self.checkbox_all_albums_art.bind(active=_on_checkbox_select)
 
         # switch for fullscreen
-        def _switch_select(_widget: Switch, _):
+        def _on_switch_select(_widget: Switch, _):
             if _widget.active:
                 win32gui.ShowWindow(win32gui.FindWindow(None, self.title), win32con.SW_MAXIMIZE)
             else:
@@ -175,7 +182,7 @@ class TagEditor(App, BoxLayout):
         self.switch_full_label = self._FileInfoLabel(text="[ref=world]Fullscreen[ref=world]",
                                                      markup=True)
         self.switch_full = Switch(active=True)
-        self.switch_full.bind(active=_switch_select)
+        self.switch_full.bind(active=_on_switch_select)
 
         # switch for applying album art to all songs of the same album
         def _label_select(_widget: Widget, _):
@@ -267,12 +274,25 @@ class TagEditor(App, BoxLayout):
         return Popup(title=title, content=content, size=size, size_hint=size_hint,
                      title_align='center')
 
+    def _on_file_drop(self, _, file_path):
+        """
+
+        :param _:
+        :type _: kivy.core.window.window_sdl2.WindowSDL
+        :param file_path:
+        :type file_path:
+        """
+        self.file_open(None, file_path=file_path)
+
     def build(self):
         """
             building the App
         :return: the created window
         :rtype: TagEditor
         """
+        # adding support for drag and drop file
+        Window.bind(on_dropfile=self._on_file_drop)
+
         self.icon = TagEditor.constants.default_tag_cover
 
         # window background color
@@ -312,11 +332,13 @@ class TagEditor(App, BoxLayout):
         self.to_delete.cleanup()
         self.to_delete = tempfile.TemporaryDirectory()
 
-    def file_open(self, _: Button) -> None:
+    def file_open(self, _, file_path=None) -> None:
         """
             Opens a Windows file open dialog.
             It will use '.mp3' extension for file types
 
+        :param file_path:
+        :type file_path:
         :param _:
         :type _:
         :return:
@@ -324,12 +346,17 @@ class TagEditor(App, BoxLayout):
         """
         # True, None for fileopen and False, File_Name for filesave dialog
         self.reset_widgets(None)
-        file_dialog = CreateFileDialog(True, ".mp3", None, 0, "MP3 Files (*.mp3)|*.mp3", None)
-        file_dialog.DoModal()
+        if not file_path:
+            file_dialog = CreateFileDialog(True, ".mp3", None, 0, "MP3 Files (*.mp3)|*.mp3", None)
+            file_dialog.DoModal()
+            self.file_name, self.file_path, self.file_extension = \
+                file_dialog.GetFileName(), file_dialog.GetPathNames()[0], file_dialog.GetFileExt()
 
-        # String, List, String
-        self.file_name, self.file_path, self.file_extension = \
-            file_dialog.GetFileName(), file_dialog.GetPathNames(), file_dialog.GetFileExt()
+        else:
+            file_path = file_path.decode()
+            self.file_name, self.file_path, self.file_extension = \
+                os.path.basename(file_path), os.path.dirname(file_path), \
+                os.path.splitext(file_path)[-1]
 
         # if no file is selected or cancel button is pressed
         if any([self.file_name == '', self.file_path == [], self.file_extension == '']):
@@ -341,14 +368,14 @@ class TagEditor(App, BoxLayout):
             return
 
         try:
-            audio_file, mp3_file = EasyID3(self.file_path[0]), MP3(self.file_path[0])
+            audio_file, mp3_file = EasyID3(self.file_path), MP3(self.file_path)
 
         except id3.ID3NoHeaderError:
             # adding id3 header tags if the file has none
-            with self.saving(File(self.file_path[0], easy=True)) as file:
+            with self.saving(File(self.file_path, easy=True)) as file:
                 file.add_tags()
 
-            audio_file, mp3_file = EasyID3(self.file_path[0]), MP3(self.file_path[0])
+            audio_file, mp3_file = EasyID3(self.file_path), MP3(self.file_path)
 
         if any(['APIC:Cover' in mp3_file, 'APIC:' in mp3_file]):
             with open(os.path.join(self.to_delete.name, 'image.jpeg'), 'wb') as img:
@@ -387,7 +414,7 @@ class TagEditor(App, BoxLayout):
         file = None
         to_return = False
         try:
-            file = MP3(self.file_path[0], ID3=ID3)
+            file = MP3(self.file_path, ID3=ID3)
         except IndexError:
             self._return_popup(title="Error", content=Label(text='Please Open a file'),
                                size=(200, 200)).open()
@@ -414,12 +441,12 @@ class TagEditor(App, BoxLayout):
 
                 self.checkbox_all_albums_art.active = False
 
-        with self.saving(EasyID3(self.file_path[0])) as music_file:
+        with self.saving(EasyID3(self.file_path)) as music_file:
             # adding tags to the file
             for tag in self.text_input_dict:
                 music_file[tag] = self.text_input_dict[tag].text
 
-        self.file_name = self.file_path[0]
+        self.file_name = self.file_path
 
         # if the option is not "no-rename": "Don't Rename"
         if self.naming_opt != list(TagEditor.rename.keys())[0]:
@@ -429,9 +456,9 @@ class TagEditor(App, BoxLayout):
 
             # renaming the modified file with name according to the chosen option by the user
             self.file_name = self.naming_opt.format(Artist=artist, Album=album, Title=title)
-            self.file_name = rf"{os.path.dirname(self.file_path[0])}\{self.file_name}.mp3"
-            os.rename(self.file_path[0], self.file_name)
-            self.file_path[0] = self.file_name
+            self.file_name = rf"{os.path.dirname(self.file_path)}\{self.file_name}.mp3"
+            os.rename(self.file_path, self.file_name)
+            self.file_path = self.file_name
 
         self._return_popup(title='MP3 File Saved', content=Label(text=f'{self.file_name} Saved'),
                            size=(800, 200)).open()
@@ -560,7 +587,7 @@ class TagEditor(App, BoxLayout):
         """
         art_picker.dismiss()
 
-        file = MP3(self.file_path[0], ID3=ID3)
+        file = MP3(self.file_path, ID3=ID3)
         self.image_cover_art.source = TagEditor.constants.default_tag_cover
 
         try:
@@ -597,7 +624,7 @@ class TagEditor(App, BoxLayout):
         :param album_artist: the album artist name which album art has to be changed
         :type album_artist: str
         """
-        for file_name in glob(f"{os.path.dirname(self.file_path[0])}/*.mp3"):
+        for file_name in glob(f"{os.path.dirname(self.file_path)}/*.mp3"):
             music_file = EasyID3(file_name)
 
             if music_file['album'][0] == album and music_file['albumartist'][0] == album_artist:
