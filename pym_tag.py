@@ -21,7 +21,7 @@
 import os
 import tempfile
 from collections import OrderedDict
-from contextlib import suppress
+from contextlib import suppress, contextmanager
 from functools import partial
 from glob import glob
 from typing import AnyStr, Tuple, Iterable
@@ -85,8 +85,10 @@ class TagEditor(App, BoxLayout):
             self.date = 'Year'
             self.genre = 'Genre'
 
-            self.default_tag_cover = r'extras/default_music.png'
-            self.escape_button = r'extras/escape_label.png'
+            self.window_title = "Musical - Music Tag Editor"
+
+            self.default_tag_cover = os.path.join('extras', 'default_music.png')
+            self.escape_button = os.path.join('extras', 'escape_label.png')
 
         def __getitem__(self, item) -> AnyStr:
             return self.__dict__[item]
@@ -134,7 +136,7 @@ class TagEditor(App, BoxLayout):
         kwargs['orientation'] = 'vertical'
         super().__init__(**kwargs)
 
-        self.title = "Musical - Music Tag Editor"
+        self.title = TagEditor.constants.window_title
 
         # layouts
         self.main_layout = BoxLayout(orientation='horizontal')
@@ -220,6 +222,16 @@ class TagEditor(App, BoxLayout):
     def __repr__(self) -> str:
         return "TagEditor Class"
 
+    @contextmanager
+    def saving(self, file):
+        """
+            calls save method on the object
+        :param file:
+        :type file:
+        """
+        yield file
+        file.save()
+
     @staticmethod
     def _return_popup(title: AnyStr, content: Widget, size: Tuple, size_hint=(None, None)) -> Popup:
         """
@@ -270,7 +282,7 @@ class TagEditor(App, BoxLayout):
             Reset all field to original state
         """
         self.label_file_name.pretty_text = 'Open A File'
-        self.title = "Musical - Music Tag Editor"
+        self.title = self.constants.window_title
 
         for key in self.text_input_dict:
             self.text_input_dict[key].text = ''
@@ -318,9 +330,9 @@ class TagEditor(App, BoxLayout):
 
         except id3.ID3NoHeaderError:
             # adding tags if the file has none
-            file = File(self.file_path[0], easy=True)
-            file.add_tags()
-            file.save()
+            with self.saving(File(self.file_path[0], easy=True)) as file:
+                file.add_tags()
+
             audio_file, mp3_file = EasyID3(self.file_path[0]), MP3(self.file_path[0])
 
         if any(['APIC:Cover' in mp3_file, 'APIC:' in mp3_file]):
@@ -391,12 +403,10 @@ class TagEditor(App, BoxLayout):
 
         file.save()
 
-        music_file = EasyID3(self.file_path[0])
-
-        # adding tags to the file
-        for tag in self.text_input_dict:
-            music_file[tag] = self.text_input_dict[tag].text
-        music_file.save()
+        with self.saving(EasyID3(self.file_path[0])) as music_file:
+            # adding tags to the file
+            for tag in self.text_input_dict:
+                music_file[tag] = self.text_input_dict[tag].text
 
         self.file_name = self.file_path[0]
 
@@ -584,12 +594,10 @@ class TagEditor(App, BoxLayout):
             music_file = EasyID3(file_name)
 
             if music_file['album'][0] == album and music_file['albumartist'][0] == album_artist:
-                music_file.save()
-                mp3_file = MP3(file_name)
-                with open(self.image_cover_art.source, 'rb') as alb_art:
-                    mp3_file.tags.add(APIC(encoding=1, mime='image/png', type=3, desc=u'Cover',
-                                           data=alb_art.read()))
-                    mp3_file.save()
+                with self.saving(MP3(file_name)) as mp3_file:
+                    with open(self.image_cover_art.source, 'rb') as alb_art:
+                        mp3_file.tags.add(APIC(encoding=1, mime='image/png', type=3, desc=u'Cover',
+                                               data=alb_art.read()))
 
     def on_start(self):
         """
