@@ -53,6 +53,7 @@ class TagEditor(App, BoxLayout):
     """
         Class for tag editor
     """
+
     # class attributes
     # File renaming options
     rename = {"no-rename": "Don't Rename", "album-title": "{Album} - {Title}",
@@ -61,7 +62,6 @@ class TagEditor(App, BoxLayout):
               "title-album": "{Title} - {Album}"}
 
     FILE_OPENED = False  # to store state of the opened file
-    TO_DELETE: list = list()  # to store the list of temporary directories which are to be deleted
     __DEFAULT_TAG_COVER = r'extras/default_music.png'
     __ESCAPE_BUTTON = r'extras/escape_label.png'
 
@@ -91,7 +91,7 @@ class TagEditor(App, BoxLayout):
                         f"[/i][/b]"
 
     @staticmethod
-    def return_popup(title: AnyStr, content: Widget, size: Tuple, size_hint=(None, None)) -> Popup:
+    def _return_popup(title: AnyStr, content: Widget, size: Tuple, size_hint=(None, None)) -> Popup:
         """
             This method is for creating a unified Popup which will have a similar design
             throughout the application
@@ -258,6 +258,7 @@ class TagEditor(App, BoxLayout):
             file_dialog.GetFileName(), file_dialog.GetPathNames(), file_dialog.GetFileExt()
 
         if any([self.file_name == '', self.file_path == [], self.file_extension == '']):
+            # if file open operation is cancelled, show a notification
             win_notification = ToastNotifier()
             win_notification.show_toast(self.title, "File open operation cancelled",
                                         icon_path=TagEditor.__DEFAULT_TAG_COVER,
@@ -309,8 +310,8 @@ class TagEditor(App, BoxLayout):
         """
 
         if not TagEditor.FILE_OPENED:
-            self.return_popup(title='No file opened', content=Label(text="Please open a file..."),
-                              size_hint=(None, None), size=(500, 100)).open()
+            self._return_popup(title='No file opened', content=Label(text="Please open a file..."),
+                               size_hint=(None, None), size=(500, 100)).open()
             return
 
         file = None
@@ -318,8 +319,8 @@ class TagEditor(App, BoxLayout):
         try:
             file = MP3(self.file_path[0], ID3=ID3)
         except IndexError:
-            self.return_popup(title="Error", content=Label(text='Please Open a file'),
-                              size_hint=(None, None), size=(200, 200)).open()
+            self._return_popup(title="Error", content=Label(text='Please Open a file'),
+                               size_hint=(None, None), size=(200, 200)).open()
             to_return = True
 
         if to_return:
@@ -355,8 +356,8 @@ class TagEditor(App, BoxLayout):
             os.rename(self.file_path[0], self.file_name)
             self.file_path[0] = self.file_name
 
-        self.return_popup(title='MP3 File Saved', content=Label(text=f'{self.file_name} Saved'),
-                          size=(800, 200)).open()
+        self._return_popup(title='MP3 File Saved', content=Label(text=f'{self.file_name} Saved'),
+                           size=(800, 200)).open()
 
         self.label_file_name.pretty_text = os.path.basename(self.file_name)
 
@@ -373,8 +374,8 @@ class TagEditor(App, BoxLayout):
         """
 
         if not TagEditor.FILE_OPENED:
-            self.return_popup(title='No file opened', content=Label(text="Please open a file..."),
-                              size=(500, 100)).open()
+            self._return_popup(title='No file opened', content=Label(text="Please open a file..."),
+                               size=(500, 100)).open()
             return
 
         button_local_picker = Button(text='Local Filesystem')
@@ -392,8 +393,8 @@ class TagEditor(App, BoxLayout):
             widget.bind(on_press=func)
             art_button_layout.add_widget(widget)
 
-        art_picker = self.return_popup(title='Select Album Art', content=art_button_layout,
-                                       size=(200, 200))
+        art_picker = self._return_popup(title='Select Album Art', content=art_button_layout,
+                                        size=(200, 200))
 
         art_picker.open()
 
@@ -437,10 +438,10 @@ class TagEditor(App, BoxLayout):
         :type _:
         """
         if self.text_input_dict['album'].text == "":
-            self.return_popup(title='Empty Fields',
-                              content=Label(text="Please fill Album and Artist field to perform "
-                                                 "an auto search of album art"),
-                              size=(500, 100)).open()
+            self._return_popup(title='Empty Fields',
+                               content=Label(text="Please fill Album and Artist field to perform "
+                                                  "an auto search of album art"),
+                               size=(500, 100)).open()
             return
 
         # Google advance search query; tbm=isch -> image search; image size = 500*500
@@ -488,11 +489,12 @@ class TagEditor(App, BoxLayout):
         """
         pass
 
-    def on_start_app(self):
+    def on_start(self):
         """
             this will be called when the app will start
             and it will do perform necessary modification
         """
+        # Window Custom Configuration
         # making window non-resizable and borderless
         Config.set('graphics', 'resizable', False)
         Config.set('graphics', 'borderless', True)
