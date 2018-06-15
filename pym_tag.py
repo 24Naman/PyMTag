@@ -9,10 +9,11 @@
     changing album art using local file system or using Internet search or removing it completely.
 
 """
-import os
+
+import os.path
 import shutil
-import time
 from contextlib import suppress
+from time import time
 
 import win32con
 # noinspection PyProtectedMember
@@ -30,7 +31,7 @@ from kivy.uix.popup import Popup
 from kivy.uix.spinner import Spinner
 from kivy.uix.textinput import TextInput
 
-import mutagen
+from mutagen import id3, File
 from mutagen.easyid3 import EasyID3
 # noinspection PyProtectedMember
 from mutagen.id3 import APIC, ID3
@@ -38,7 +39,7 @@ from mutagen.mp3 import MP3
 
 import win32api
 import win32gui
-import win32ui
+from win32ui import CreateFileDialog
 import winxpgui
 
 
@@ -257,8 +258,7 @@ class TagEditor(App, BoxLayout):
         """
         # True, None for fileopen and False, File_Name for filesave dialog
         self.reset(None)
-        file_dialog = win32ui.CreateFileDialog(True, ".mp3", None, 0, "MP3 Files (*.mp3)|*.mp3",
-                                               None)
+        file_dialog = CreateFileDialog(True, ".mp3", None, 0, "MP3 Files (*.mp3)|*.mp3", None)
         file_dialog.DoModal()
 
         self.file_name, self.file_path, self.file_extension = \
@@ -269,14 +269,14 @@ class TagEditor(App, BoxLayout):
 
         try:
             audio_file, mp3_file = EasyID3(self.file_path[0]), MP3(self.file_path[0])
-        except mutagen.id3.ID3NoHeaderError:
-            file = mutagen.File(self.file_path[0], easy=True)
+        except id3.ID3NoHeaderError:
+            file = File(self.file_path[0], easy=True)
             file.add_tags()
             file.save()
             audio_file, mp3_file = EasyID3(self.file_path[0]), MP3(self.file_path[0])
 
         if any(['APIC:Cover' in mp3_file, 'APIC:' in mp3_file]):
-            _temp_dir_name = rf"{os.getcwd()}\{self.file_name}{round(time.time())}"
+            _temp_dir_name = rf"{os.getcwd()}\{self.file_name}{round(time())}"
             os.mkdir(_temp_dir_name)
             self.to_delete = True
             TagEditor.TO_DELETE.append(_temp_dir_name)
@@ -327,7 +327,7 @@ class TagEditor(App, BoxLayout):
 
         if to_return:
             return
-        with suppress(mutagen.id3.error):
+        with suppress(id3.error):
             file.clear()
             file.add_tags()
 
@@ -416,12 +416,12 @@ class TagEditor(App, BoxLayout):
                      "*.png ||"
 
         if not downloaded:
-            file_dialog = win32ui.CreateFileDialog(True, None, None, 0, file_types, None)
+            file_dialog = CreateFileDialog(True, None, None, 0, file_types, None)
         else:
             # noinspection SpellCheckingInspection
-            file_dialog = win32ui.CreateFileDialog(True, os.path.join(os.getenv('USERPROFILE',
-                                                                                'Downloads')), None,
-                                                   0, file_types, None)
+            file_dialog = CreateFileDialog(True, os.path.join(os.getenv('USERPROFILE',
+                                                                        'Downloads')), None,
+                                           0, file_types, None)
 
         file_dialog.DoModal()
 
@@ -471,6 +471,12 @@ class TagEditor(App, BoxLayout):
         finally:
             self.image_cover_art.clear_widgets()
 
+    def album_art_all_songs(self):
+        """
+            Apply album art to all songs of the same album
+        """
+        pass
+
     # noinspection SpellCheckingInspection
     def on_start(self):
         """
@@ -491,11 +497,13 @@ class TagEditor(App, BoxLayout):
 
         gwl_style_caption = gwl_style_border | gwl_style_dlgframe
 
+        # Retrieves a handle to the top - level window whose class name and window name match the
+        # specified strings.
         window_handler = win32gui.FindWindow(None, self.title)
 
         style = win32gui.GetWindowLong(window_handler, win32con.GWL_STYLE)
-        style = style & ~(gwl_style_border | gwl_style_caption | gwl_style_thickframe |
-                          gwl_style_minimizebox | gwl_style_maximizebox | gwl_style_sysmenu)
+        style = style & (gwl_style_border | gwl_style_caption | gwl_style_thickframe |
+                         gwl_style_minimizebox | gwl_style_maximizebox | gwl_style_sysmenu)
         win32gui.SetWindowLong(window_handler, win32con.GWL_STYLE, style)
 
         # making window transparent
