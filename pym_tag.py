@@ -8,7 +8,13 @@
     It supports Tag editing using mutagen library, renaming the file based on its ID3 attributes,
     changing album art using local file system or using Internet search or removing it completely.
 
+
 """
+
+# ## PyLint custom options: ## #
+# pylint: disable=too-many-instance-attributes
+# pylint: disable=c-extension-no-member
+# pylint: disable=no-name-in-module
 
 import os.path
 import tempfile
@@ -45,11 +51,6 @@ class TagEditor(App, BoxLayout):
     """
         Class for tag editor
     """
-
-    # pylint: disable=too-many-instance-attributes
-    # pylint: disable=c-extension-no-member
-    # pylint: disable=no-name-in-module
-
     # class attributes
     # File renaming options
     rename = {"no-rename": "Don't Rename", "album-title": "{Album} - {Title}",
@@ -164,7 +165,7 @@ class TagEditor(App, BoxLayout):
             self.naming_option = selected_text
 
         self.naming_option = "no-rename"
-        self.naming_option_spinner = Spinner(text=TagEditor.rename["no-rename"],
+        self.naming_option_spinner = Spinner(text=TagEditor.rename[self.naming_option],
                                              values=[TagEditor.rename[key]
                                                      for key in TagEditor.rename])
 
@@ -489,7 +490,8 @@ class TagEditor(App, BoxLayout):
                                win32gui.GetWindowLong(window_handler, win32con.GWL_EXSTYLE) |
                                win32con.WS_EX_LAYERED)
 
-        winxpgui.SetLayeredWindowAttributes(window_handler, win32api.RGB(0, 0, 0), 200,
+        # Set the opacity and transparency color key of the windows
+        winxpgui.SetLayeredWindowAttributes(window_handler, win32api.RGB(0, 0, 0), 220,
                                             win32con.LWA_ALPHA)
 
         # opening window in maximized mode
