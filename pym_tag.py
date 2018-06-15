@@ -129,32 +129,26 @@ class TagEditor(App, BoxLayout):
                                                 pos_hint={'top': True, 'center_x': True})
         self.music_file_tag_layout = BoxLayout(orientation='vertical', size_hint=(0.5, 1))
 
-        self.image_cover_art = Image(source=r'extras/default_music.png')
+        self.image_cover_art = Image(source=TagEditor.__DEFAULT_TAG_COVER)
         self.label_file_name = TagEditor.FileInfoLabel('Open A File')
         self.button_album_art_change = Button(text="Album Art Options", size_hint=(0.25, 0.1),
                                               pos_hint={'center_x': 0.5},
                                               background_color=(255, 0, 0, 0.4),
                                               background_normal='')
 
-        self.info_layout = BoxLayout(orientation='vertical', size_hint=(1, 1))
-
-        for widget in [self.image_cover_art, self.button_album_art_change, self.label_file_name]:
+        for widget in (self.image_cover_art, self.button_album_art_change, self.label_file_name,
+                       Image(source=TagEditor.__ESCAPE_BUTTON, size_hint=(None, None),
+                             size=(600, 200), pos_hint={'center_x': 0.725, 'bottom': True})):
             self.music_file_info_layout.add_widget(widget)
-
-        self.info_layout.add_widget(Image(source=TagEditor.__ESCAPE_BUTTON,
-                                          size_hint=(None, None), size=(600, 200),
-                                          pos_hint={'center_x': 0.725, 'bottom': True}))
-
-        self.music_file_info_layout.add_widget(self.info_layout)
 
         self.text_input_dict = dict()
 
-        text_input_keys = ['title', 'artist', 'album', 'albumartist', 'date', 'genre']
-        text_input_hints = ['Title', 'Artists', 'Album', 'Album Artists', 'Year', 'Genre']
+        keys_hints_dict = {'title': 'Title', 'artist': 'Artists', 'album': 'Album',
+                           'albumartist': 'Album Artists', 'date': 'Year', 'genre': 'Genre'}
 
-        for key, hint in zip(text_input_keys, text_input_hints):
+        for key in keys_hints_dict:
             self.text_input_dict[key] = TextInput(hint_text_color=[26, 12, 232, 1],
-                                                  hint_text=hint, multiline=False,
+                                                  hint_text=keys_hints_dict[key], multiline=False,
                                                   font_size='20sp',
                                                   background_color=(0, 255, 255, 0.8))
 
