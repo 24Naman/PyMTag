@@ -17,14 +17,12 @@
 # pylint: disable=c-extension-no-member
 # pylint: disable=no-name-in-module
 
-import random
 import os
 import tempfile
-from collections import OrderedDict
 from contextlib import suppress, contextmanager
 from functools import partial
 from glob import glob
-from typing import AnyStr, Tuple, Iterator
+from typing import AnyStr, Tuple
 
 import shutil
 from urllib.parse import urlunparse, quote, urlencode
@@ -40,7 +38,6 @@ from kivy.uix.checkbox import CheckBox
 from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
-from kivy.uix.spinner import Spinner
 from kivy.uix.switch import Switch
 from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
@@ -58,6 +55,8 @@ import win32gui
 from win32ui import CreateFileDialog
 import winxpgui
 
+from helper_classes import Constants, FileInfoLabel, CustomSpinner
+
 
 class TagEditor(App, BoxLayout):
     """
@@ -66,66 +65,6 @@ class TagEditor(App, BoxLayout):
 
     # class attributes
     FILE_OPENED = False  # to store state of the opened file
-    # File renaming options
-    rename = {"no-rename": "Don't Rename", "album-title": "{Album} - {Title}",
-              "album-artist-title": "{Album} - {Artist} - {Title}",
-              "artist-album-title": "{Artist} - {Album} - {Title}",
-              "title-album": "{Title} - {Album}"}
-
-    # noinspection SpellCheckingInspection
-    class _Constants(OrderedDict):
-        """
-            This class is for providing constants
-        """
-
-        def __init__(self, **kwargs) -> None:
-            super().__init__(**kwargs)
-
-            self.title = 'Title'
-            self.artist = 'Artist'
-            self.album = 'Album'
-            self.albumartist = 'Album Artists'
-            self.date = 'Year'
-            self.genre = 'Genre'
-            self.tracknumber = 'Track Number'
-
-            self.window_title = "Musical - Music Tag Editor"
-
-            tag_covers = ['default_music_one.png', 'default_music_two.png']
-            self.default_tag_cover = os.path.join('extras', 'images', random.choice(tag_covers))
-
-        def __getitem__(self, item) -> AnyStr:
-            return self.__dict__[item]
-
-        def __iter__(self) -> Iterator[str]:
-            yield from ['title', 'artist', 'album', 'albumartist', 'date', 'genre', 'tracknumber']
-
-    constants = _Constants()
-
-    class _FileInfoLabel(Label):
-        """
-            File Info Label
-        """
-
-        def __init__(self, text: str, **kwargs) -> None:
-            kwargs['text'] = f'[b][i][size=15][color=000000]{text}[/color][/i][/b]'
-            kwargs['size_hint_x'] = 1
-            kwargs['size_hint_y'] = 0.25
-            kwargs['markup'] = True
-
-            super().__init__(**kwargs)
-
-        @property
-        def pretty_text(self) -> str:
-            """
-                Getter for text
-            """
-            return self.text
-
-        @pretty_text.setter
-        def pretty_text(self, value: str) -> None:
-            self.text = f"[b][i][size=15][color=000000]{os.path.basename(value)}[/color][/font]" \
-                        f"[/i][/b]"
 
     def __init__(self, **kwargs):
         """
@@ -136,7 +75,8 @@ class TagEditor(App, BoxLayout):
         kwargs['orientation'] = 'vertical'
         super().__init__(**kwargs)
 
-        self.title = TagEditor.constants.window_title
+        self.constants = Constants()
+        self.title = self.constants.window_title
 
         # layouts
         self.main_layout = BoxLayout(orientation='horizontal')
@@ -144,8 +84,8 @@ class TagEditor(App, BoxLayout):
                                                 pos_hint={'top': True, 'center_x': True})
         self.music_file_tag_layout = BoxLayout(orientation='vertical', size_hint=(0.5, 1))
 
-        self.image_cover_art = Image(source=TagEditor.constants.default_tag_cover)
-        self.label_file_name = self._FileInfoLabel('Open A File')
+        self.image_cover_art = Image(source=self.constants.default_tag_cover)
+        self.label_file_name = FileInfoLabel('Open A File')
         self.button_album_art_change = Button(text="Options", size_hint=(0.25, 0.1),
                                               pos_hint={'center_x': 0.5},
                                               background_color=(255, 0, 0, 0.4),
@@ -155,16 +95,16 @@ class TagEditor(App, BoxLayout):
             self.music_file_info_layout.add_widget(widget)
 
         self.text_input_dict = {key: TextInput(hint_text_color=[26, 12, 232, 1],
-                                               hint_text=TagEditor.constants[key],
+                                               hint_text=self.constants[key],
                                                multiline=False,
                                                font_size='20sp',
                                                background_color=(0, 255, 255, 0.8))
-                                for key in TagEditor.constants}
+                                for key in self.constants}
 
         # checkbox function which will be called when checkbox is selected
         def _on_checkbox_select(_widget: Widget, _):
             if not TagEditor.FILE_OPENED:
-                self._return_popup(title="No File opened", content=Label(text="No File Opened"),)\
+                self._return_popup(title="No File opened", content=Label(text="No File Opened"), ) \
                     .open()
 
         self.checkbox_layout = BoxLayout(orientation='horizontal')
@@ -172,15 +112,15 @@ class TagEditor(App, BoxLayout):
         self.checkbox_all_albums_art = CheckBox(active=True, color=[0, 0, 0, 1])
         self.checkbox_all_albums_art.bind(active=_on_checkbox_select)
 
-        # switch for fullscreen
+        # switch for full screen
         def _on_switch_select(_widget: Switch, _):
             if _widget.active:
                 win32gui.ShowWindow(win32gui.FindWindow(None, self.title), win32con.SW_MAXIMIZE)
             else:
                 win32gui.ShowWindow(win32gui.FindWindow(None, self.title), win32con.SW_NORMAL)
 
-        self.switch_full_label = self._FileInfoLabel(text="[ref=world]Fullscreen[ref=world]",
-                                                     markup=True)
+        self.switch_full_label = FileInfoLabel(text="[ref=world]Full Screen[ref=world]",
+                                               markup=True)
         self.switch_full = Switch(active=True)
         self.switch_full.bind(active=_on_switch_select)
 
@@ -188,8 +128,8 @@ class TagEditor(App, BoxLayout):
         def _label_select(_widget: Widget, _):
             self.checkbox_all_albums_art.active = not self.checkbox_all_albums_art.active
 
-        label_all = self._FileInfoLabel(text="[ref=world]Apply this album art to all songs in the "
-                                             "album[ref=world]", markup=True)
+        label_all = FileInfoLabel(text="[ref=world]Apply this album art to all songs in the "
+                                       "album[ref=world]", markup=True)
         label_all.bind(on_ref_press=_label_select)
 
         for widget in label_all, self.checkbox_all_albums_art:
@@ -217,9 +157,9 @@ class TagEditor(App, BoxLayout):
             """
             self.naming_opt = selected_text
 
-        self.naming_option_spinner = Spinner(text=TagEditor.rename[self.naming_opt],
-                                             values=[TagEditor.rename[key]
-                                                     for key in TagEditor.rename])
+        self.naming_option_spinner = CustomSpinner(text=self.constants.rename[self.naming_opt],
+                                                   values=[self.constants.rename[key]
+                                                           for key in self.constants.rename])
 
         self.naming_option_spinner.bind(text=_naming_option_selector)
 
@@ -274,15 +214,15 @@ class TagEditor(App, BoxLayout):
         return Popup(title=title, content=content, size=size, size_hint=size_hint,
                      title_align='center')
 
-    def _on_file_drop(self, _, file_path):
+    def _on_file_drop(self, _, file_path: bytes):
         """
 
         :param _:
         :type _: kivy.core.window.window_sdl2.WindowSDL
         :param file_path:
-        :type file_path:
+        :type file_path: bytes
         """
-        self.file_open(None, file_path=file_path)
+        self.file_open(None, file_path=file_path.decode())
 
     def build(self):
         """
@@ -293,9 +233,10 @@ class TagEditor(App, BoxLayout):
         # adding support for drag and drop file
         Window.bind(on_dropfile=self._on_file_drop)
 
-        self.icon = TagEditor.constants.default_tag_cover
+        self.icon = self.constants.default_tag_cover
 
         # window background color
+        # noinspection SpellCheckingInspection
         Window.clearcolor = (255, 215, 0, 1)
 
         for key in self.text_input_dict:
@@ -321,8 +262,8 @@ class TagEditor(App, BoxLayout):
 
         for key in self.text_input_dict:
             self.text_input_dict[key].text = ''
-        if os.path.exists(os.path.join(os.getcwd(), TagEditor.constants.default_tag_cover)):
-            self.image_cover_art.source = TagEditor.constants.default_tag_cover
+        if os.path.exists(os.path.join(os.getcwd(), self.constants.default_tag_cover)):
+            self.image_cover_art.source = self.constants.default_tag_cover
             self.image_cover_art.reload()
         else:
             self.image_cover_art.clear_widgets()
@@ -344,7 +285,8 @@ class TagEditor(App, BoxLayout):
         :return:
         :rtype:
         """
-        # True, None for fileopen and False, File_Name for filesave dialog
+
+        # True, None for fileopen and False, File_Name for file save dialog
         self.reset_widgets(None)
         if not file_path:
             file_dialog = CreateFileDialog(True, ".mp3", None, 0, "MP3 Files (*.mp3)|*.mp3", None)
@@ -353,7 +295,7 @@ class TagEditor(App, BoxLayout):
                 file_dialog.GetFileName(), file_dialog.GetPathNames()[0], file_dialog.GetFileExt()
 
         else:
-            file_path = file_path.decode()
+            file_path = file_path
             self.file_name, self.file_path, self.file_extension = \
                 os.path.basename(file_path), os.path.dirname(file_path), \
                 os.path.splitext(file_path)[-1]
@@ -363,7 +305,7 @@ class TagEditor(App, BoxLayout):
             # if file open operation is cancelled, show a notification
             win_notification = ToastNotifier()
             win_notification.show_toast(self.title, "File open operation cancelled",
-                                        icon_path=TagEditor.constants.default_tag_cover,
+                                        icon_path=self.constants.default_tag_cover,
                                         duration=5)
             return
 
@@ -427,7 +369,7 @@ class TagEditor(App, BoxLayout):
                 file.delete()
                 file.add_tags()
 
-            if not self.image_cover_art.source == TagEditor.constants.default_tag_cover:
+            if not self.image_cover_art.source == self.constants.default_tag_cover:
                 with open(self.image_cover_art.source, 'rb') as alb_art:
                     file.tags.add(APIC(encoding=1, mime='image/png', type=3, desc=u'Cover',
                                        data=alb_art.read()))
@@ -449,7 +391,7 @@ class TagEditor(App, BoxLayout):
         self.file_name = self.file_path
 
         # if the option is not "no-rename": "Don't Rename"
-        if self.naming_opt != list(TagEditor.rename.keys())[0]:
+        if self.naming_opt != list(self.constants.rename.keys())[0]:
             artist = music_file['albumartist'][0]
             album = music_file['album'][0]
             title = music_file['title'][0]
@@ -588,7 +530,7 @@ class TagEditor(App, BoxLayout):
         art_picker.dismiss()
 
         file = MP3(self.file_path, ID3=ID3)
-        self.image_cover_art.source = TagEditor.constants.default_tag_cover
+        self.image_cover_art.source = self.constants.default_tag_cover
 
         try:
             file.pop('APIC:Cover')
@@ -675,7 +617,7 @@ class TagEditor(App, BoxLayout):
                                             win32con.LWA_ALPHA)
 
         # opening window in maximized mode
-        win32gui.ShowWindow(window_handler, win32con.SW_MAXIMIZE)
+        win32gui.ShowWindow(window_handler, win32con.SW_NORMAL)
 
     def on_stop(self):
         """
