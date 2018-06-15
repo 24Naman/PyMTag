@@ -41,6 +41,7 @@ from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.spinner import Spinner
+from kivy.uix.switch import Switch
 from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
 
@@ -161,8 +162,22 @@ class TagEditor(App, BoxLayout):
                                 for key in TagEditor.constants}
 
         self.checkbox_layout = BoxLayout(orientation='horizontal')
+        self.switch_layout = BoxLayout(orientation='horizontal')
         self.checkbox_all_albums_art = CheckBox(active=True, color=[0, 0, 0, 1])
 
+        # switch for fullscreen
+        def _switch_select(_widget: Switch, _):
+            if _widget.active:
+                win32gui.ShowWindow(win32gui.FindWindow(None, self.title), win32con.SW_MAXIMIZE)
+            else:
+                win32gui.ShowWindow(win32gui.FindWindow(None, self.title), win32con.SW_NORMAL)
+
+        self.switch_full_label = self._FileInfoLabel(text="[ref=world]Fullscreen[ref=world]",
+                                                     markup=True)
+        self.switch_full = Switch(active=True)
+        self.switch_full.bind(active=_switch_select)
+
+        # switch for applying album art to all songs of the same album
         def _label_select(_widget: Widget, _):
             self.checkbox_all_albums_art.active = not self.checkbox_all_albums_art.active
 
@@ -170,8 +185,11 @@ class TagEditor(App, BoxLayout):
                                              "album[ref=world]", markup=True)
         label_all.bind(on_ref_press=_label_select)
 
-        for widget in (label_all, self.checkbox_all_albums_art):
+        for widget in label_all, self.checkbox_all_albums_art:
             self.checkbox_layout.add_widget(widget)
+
+        for widget in self.switch_full_label, self.switch_full:
+            self.switch_layout.add_widget(widget)
 
         self.button_open = Button(text='Open', background_color=(255, 0, 0, 1),
                                   background_normal='')
@@ -263,7 +281,8 @@ class TagEditor(App, BoxLayout):
         for key in self.text_input_dict:
             self.music_file_tag_layout.add_widget(widget=self.text_input_dict[key])
 
-        for widget in self.naming_option_spinner, self.checkbox_layout, self.layout_button:
+        for widget in (self.naming_option_spinner, self.checkbox_layout, self.switch_layout,
+                       self.layout_button):
             self.music_file_tag_layout.add_widget(widget)
 
         for widget in self.music_file_info_layout, self.music_file_tag_layout:
@@ -362,7 +381,7 @@ class TagEditor(App, BoxLayout):
 
         if not TagEditor.FILE_OPENED:
             self._return_popup(title='No file opened',
-                               content=Label(text="Please open a file..."),).open()
+                               content=Label(text="Please open a file..."), ).open()
             return
 
         file = None
@@ -490,7 +509,8 @@ class TagEditor(App, BoxLayout):
 
         # True for fileopen and False for filesave dialog
         # opening file dialog in Downloads folder if the image was searched online
-        file_dialog = CreateFileDialog(True, os.path.join(os.getenv('USERPROFILE', 'Downloads'))
+        file_dialog = CreateFileDialog(True,
+                                       os.path.join(os.getenv('USERPROFILE', 'Downloads'))
                                        if downloaded else None, None, 0, file_types, None)
 
         file_dialog.DoModal()
