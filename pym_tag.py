@@ -10,13 +10,11 @@
 import os
 import shutil
 import time
-import win32ui
 from contextlib import suppress
-from functools import partial
-from urllib.request import urlopen
 
 import mutagen
 from kivy.app import App
+from kivy.core.window import Window
 from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.bubble import Bubble
@@ -29,9 +27,10 @@ from kivy.uix.spinner import Spinner
 from kivy.uix.textinput import TextInput
 from mutagen import File
 from mutagen.easyid3 import EasyID3
-from mutagen.id3 import APIC
-from mutagen.id3 import ID3
+from mutagen.id3 import APIC, ID3
 from mutagen.mp3 import MP3
+
+import win32ui
 
 
 class TagEditor(App, BoxLayout):
@@ -51,7 +50,7 @@ class TagEditor(App, BoxLayout):
 
     FILE_OPENED = False
     TO_DELETE = list()
-    __DEFAULT_TAG_COVER = 'default_music.png'
+    __DEFAULT_TAG_COVER = r'extras/default_music.png'
 
     @classmethod
     def default_tag_image(cls):
@@ -71,12 +70,38 @@ class TagEditor(App, BoxLayout):
             if os.path.exists(TagEditor.default_tag_image()):
                 kwargs['source'] = TagEditor.default_tag_image()
 
+            # The width should be equal to parent
             kwargs['size_hint_x'] = 1
+            # The width should be half of the parent
             kwargs['size_hint_y'] = 0.5
             kwargs['pos_hint'] = {'top': True}
             kwargs['width'] = parent_width
 
             super().__init__(**kwargs)
+
+    class FileInfoLabel(Label):
+        """
+            File Info Label
+        """
+
+        def __init__(self, text: str, **kwargs):
+            kwargs['text'] = f'[color=000000]{text}[/color]'
+            kwargs['size_hint_x'] = 1
+            kwargs['size_hint_y'] = 0.25
+            kwargs['markup'] = True
+
+            super().__init__(**kwargs)
+
+        @property
+        def pretty_text(self):
+            """
+                Getter for text
+            """
+            return self.text
+
+        @pretty_text.setter
+        def pretty_text(self, value):
+            self.text = f"[color=000000]{os.path.basename(value)}[/color]"
 
     def __init__(self, **kwargs):
         """
@@ -87,7 +112,7 @@ class TagEditor(App, BoxLayout):
         kwargs['orientation'] = 'vertical'
         super().__init__(**kwargs)
 
-        self.title = "Python - Music Tag Editor"
+        self.title = "Musical - Music Tag Editor"
 
         # layouts
         self.main_layout = BoxLayout(orientation='horizontal')
@@ -97,7 +122,7 @@ class TagEditor(App, BoxLayout):
 
         parent_width = self.width
         self.image_cover_art = TagEditor.ImageButton(parent_width)
-        self.label_file_name = Label(text='Open File', size_hint_x=1, size_hint_y=0.25)
+        self.label_file_name = TagEditor.FileInfoLabel('Open A File')
 
         for widget in [self.image_cover_art, self.label_file_name]:
             self.music_file_info_layout.add_widget(widget)
@@ -112,9 +137,12 @@ class TagEditor(App, BoxLayout):
                                                   hint_text_color=(1, 1, 1, 1), font_size='25sp',
                                                   background_color=(0, 255, 255, 0.8))
 
-        self.button_open = Button(text='Open')
-        self.button_save = Button(text='Save')
-        self.button_reset = Button(text='Reset')
+        self.button_open = Button(text='Open', background_color=(255, 0, 0, 1),
+                                  background_normal='')
+        self.button_save = Button(text='Save', background_color=(255, 0, 0, 1),
+                                  background_normal='')
+        self.button_reset = Button(text='Reset', background_color=(255, 0, 0, 1),
+                                   background_normal='')
 
         self.bubble_button = {
             'button_local': Button(text='Pick Image from Local File System'),
@@ -124,9 +152,6 @@ class TagEditor(App, BoxLayout):
         search_bubble = Bubble(orientation='horizontal')
         for widget in [self.bubble_button['button_local'], self.bubble_button['button_google']]:
             search_bubble.add_widget(widget)
-
-        # for layout in (self.music_file_info_layout, self.music_file_tag_layout):
-        #     self.main_layout.add_widget(layout)
 
         self.main_layout.add_widget(self.music_file_info_layout)
         self.main_layout.add_widget(self.music_file_tag_layout)
@@ -175,6 +200,9 @@ class TagEditor(App, BoxLayout):
         :rtype:
         """
 
+        # window background color
+        Window.clearcolor = (255, 215, 0, 1)
+
         self.add_widget(self.main_layout)
         for key in self.text_input_dict:
             self.music_file_tag_layout.add_widget(widget=self.text_input_dict[key])
@@ -188,10 +216,15 @@ class TagEditor(App, BoxLayout):
         """
             Reset all field to original state
         """
-        self.label_file_name.text = 'Open File'
+        self.label_file_name.pretty_text = 'Open File'
+        self.title = "Musical - Music Tag Editor"
+
         for key in self.text_input_dict:
             self.text_input_dict[key].text = ''
-        self.image_cover_art.source = TagEditor.__DEFAULT_TAG_COVER
+        if os.path.exists(TagEditor.__DEFAULT_TAG_COVER):
+            self.image_cover_art.source = TagEditor.__DEFAULT_TAG_COVER
+        else:
+            self.image_cover_art.clear_widgets()
         TagEditor.FILE_OPENED = False
 
     def file_open(self, _: Button):
@@ -202,7 +235,7 @@ class TagEditor(App, BoxLayout):
         :return:
         :rtype:
         """
-        # True for fileopen and False for filesave dialog
+        # True, None for fileopen and False, File_Name for filesave dialog
         self.reset(None)
         file_dialog = win32ui.CreateFileDialog(True, ".mp3", None, 0, "MP3 Files (*.mp3)|*.mp3",
                                                None)
@@ -224,7 +257,7 @@ class TagEditor(App, BoxLayout):
             file.save()
             AUDIO_FILE, MP3_FILE = EasyID3(self.file_path[0]), MP3(self.file_path[0])
 
-        if 'APIC:Cover' in MP3_FILE or 'APIC:' in MP3_FILE:
+        if any(['APIC:Cover' in MP3_FILE, 'APIC:' in MP3_FILE]):
             _temp_dir_name = rf"{os.getcwd()}\{self.file_name}{round(time.time())}"
             os.mkdir(_temp_dir_name)
             self.to_delete = True
@@ -238,7 +271,8 @@ class TagEditor(App, BoxLayout):
 
             self.image_cover_art.source = f'{_temp_dir_name}/image.jpg'
 
-        self.label_file_name.text = self.file_name
+        self.title += f" -> {self.file_name}"
+        self.label_file_name.pretty_text = self.file_name
 
         with suppress(KeyError):
             for key in self.text_input_dict:
@@ -258,6 +292,11 @@ class TagEditor(App, BoxLayout):
         :return:
         :rtype:
         """
+        if not TagEditor.FILE_OPENED:
+            Popup(title='No file opened', content=Label(text="Please open a file..."),
+                  size_hint=(None, None), size=(500, 100)).open()
+            return
+
         file = None
         to_return = False
         try:
@@ -269,11 +308,9 @@ class TagEditor(App, BoxLayout):
 
         if to_return:
             return
-        try:
+        with suppress(mutagen.id3.error):
             file.clear()
             file.add_tags()
-        except mutagen.id3.error:
-            pass
 
         if not self.image_cover_art.source == TagEditor.__DEFAULT_TAG_COVER:
             with open(self.image_cover_art.source, 'rb') as alb_art:
@@ -306,9 +343,12 @@ class TagEditor(App, BoxLayout):
                            size_hint=(None, None), size=(800, 200))
 
         file_saved.open()
-        self.label_file_name.text = os.path.basename(self.file_name)
+        self.label_file_name.pretty_text = os.path.basename(self.file_name)
 
         TagEditor.FILE_OPENED = True
+
+        # resetting after saving the file
+        self.reset(None)
 
     def album_art_manager(self, _: Button):
         """
@@ -316,6 +356,12 @@ class TagEditor(App, BoxLayout):
             it will offer three choice,
             Download from Internet or Pick from local filesystem or delete the cover art
         """
+
+        if not TagEditor.FILE_OPENED:
+            Popup(title='No file opened', content=Label(text="Please open a file..."),
+                  size_hint=(None, None), size=(500, 100)).open()
+            return
+
         button_local_picker = Button(text='Local Filesystem')
         button_google_search = Button(text='Search With Google')
         button_art_remove = Button(text='Remove Album Art')
@@ -350,43 +396,26 @@ class TagEditor(App, BoxLayout):
         if not file_dialog.GetPathNames()[0] == "":
             self.image_cover_art.source = file_dialog.GetPathNames()[0]
 
-    @staticmethod
-    def download_image(_, image_url: TextInput, file_name: str):
-        """
-            Function to download image
-        :param _: kivy button object
-        :type _: kivy.uix.Button
-        :param file_name:
-        :type file_name: str
-        :param image_url:
-        :type image_url: TextInput
-        """
-        print(image_url.text, "------------------------>", file_name)
-        with urlopen(image_url) as file, open(f"{file_name}.jpg", 'rb+') as image_file:
-            print(file.read().decode('utf-8'), file=image_file)
-
-    # TODO to fix this method
     def album_art_google(self, _: Button):
         """
+        this method will open Google Chrome and search for the album art...
 
         :param _:
         :type _:
         """
-        image_download_layout = BoxLayout(orientation='vertical')
-        text_input_url = TextInput(hint_text='Enter Image URL')
-        button_download = Button(text='Download')
+        if self.text_input_dict['album'].text == "":
+            Popup(title='Empty Field', content=Label(text="Please fill Album field to perform an "
+                                                          "auto search of album art"),
+                  size_hint=(None, None), size=(500, 100)).open()
+            return
 
-        for widget in [text_input_url, button_download]:
-            image_download_layout.add_widget(widget)
+        # Google advance search query; tbm=isch -> image search; image size = 500*500
+        search_url = "https://www.google.co.in/search?tbm=isch&tbs=isz:ex,iszw:500,iszh:500&" \
+                     f"as_q={self.text_input_dict['artist'].text}+" \
+                     f" {self.text_input_dict['album'].text} album art"
 
-        # function to be called when button is clicked
-        download_function = partial(self.download_image, image_url=text_input_url,
-                                    file_name=f"google-image-{round(time.time())}.png")
-        button_download.bind(on_press=download_function)
-
-        google_image_select = Popup(title='Google Image Download', content=image_download_layout,
-                                    size_hint=(None, None), size=(500, 200))
-        google_image_select.open()
+        import webbrowser
+        webbrowser.open(search_url)
 
     def album_art_remove(self, _: Button):
         """
