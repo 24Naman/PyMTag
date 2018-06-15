@@ -20,7 +20,6 @@ import win32con
 from kivy import Config
 from kivy.app import App
 from kivy.core.window import Window
-from kivy.uix.behaviors import ButtonBehavior
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.bubble import Bubble
 from kivy.uix.button import Button
@@ -63,21 +62,6 @@ class TagEditor(App, BoxLayout):
     TO_DELETE = list()  # to store the list of the temporary directories which are to be deleted
     __DEFAULT_TAG_COVER = r'extras/default_music.png'
     __ESCAPE_BUTTON = r'extras/escape_label.png'
-
-    class ImageButton(Image, ButtonBehavior):
-        """
-            Class for giving Button characteristics to Image
-        """
-
-        def __init__(self, **kwargs):
-            if os.path.exists(TagEditor.default_tag_image()):
-                kwargs['source'] = TagEditor.default_tag_image()
-
-            # The width should be equal to parent
-            # The height should be half of the parent
-            kwargs['size_hint'] = (1, 0.5)
-
-            super().__init__(**kwargs)
 
     class FileInfoLabel(Label):
         """
@@ -134,7 +118,8 @@ class TagEditor(App, BoxLayout):
         self.label_file_name = TagEditor.FileInfoLabel('Open A File')
         self.button_album_art_change = Button(text="Album Art Options", size_hint=(0.25, 0.1),
                                               pos_hint={'center_x': 0.5},
-                                              background_color=(255, 0, 0, 1), background_normal='')
+                                              background_color=(255, 0, 0, 0.4),
+                                              background_normal='')
 
         self.info_layout = BoxLayout(orientation='vertical', size_hint=(1, 1))
 
