@@ -54,6 +54,8 @@ class Constants(OrderedDict):
         tag_covers = ['default_music_one.png', 'default_music_two.png']
         self.default_tag_cover = os.path.join('extras', 'images', random.choice(tag_covers))
 
+        self.switch_icon = os.path.join("extras", "switch_icon.png")
+
         # File renaming options
         self.rename = {"no-rename": "Don't Rename", "album-title": "{Album} - {Title}",
                        "album-artist-title": "{Album} - {Artist} - {Title}",

@@ -115,7 +115,7 @@ class TagEditor(App, BoxLayout):
         self.checkbox_all_albums_art.bind(active=_on_checkbox_select)
         self.checkbox_all_albums_art.disabled = True
 
-        # switch for full screen
+        # switch for toggling full screen
         def _on_switch_select(_widget: Switch, _):
             if _widget.active:
                 win32gui.ShowWindow(win32gui.FindWindow(None, self.title), win32con.SW_MAXIMIZE)
@@ -126,6 +126,10 @@ class TagEditor(App, BoxLayout):
                                                markup=True)
         self.switch_full = Switch(active=True)
         self.switch_full.bind(active=_on_switch_select)
+
+        # customizing switch
+        print(type(self.switch_full.canvas.children[-1]))
+        self.switch_full.canvas.children[2].source = self.constants.switch_icon
 
         # switch for applying album art to all songs of the same album
         def _label_select(_widget: Widget, _):
