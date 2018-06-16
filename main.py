@@ -10,6 +10,14 @@ import pre_setup
 
 pre_setup.main()
 
-if __name__ == '__main__':
+
+def main():
+    """
+    Main Function
+    """
     import pym_tag
     pym_tag.main()
+
+
+if __name__ == '__main__':
+    main()

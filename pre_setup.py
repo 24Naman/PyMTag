@@ -14,4 +14,3 @@ def main():
     """
     from kivy.logger import Logger
     Logger.disabled = True
-

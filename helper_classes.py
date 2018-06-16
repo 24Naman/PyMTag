@@ -71,6 +71,7 @@ class FileInfoLabel(Label):
         kwargs['markup'] = True
 
         super().__init__(**kwargs)
+        self.text = text
 
     @property
     def pretty_text(self) -> str:

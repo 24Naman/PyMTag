@@ -27,6 +27,12 @@ from typing import AnyStr, Tuple
 import shutil
 from urllib.parse import urlunparse, quote, urlencode
 
+from mutagen import id3, File
+from mutagen.easyid3 import EasyID3
+# noinspection PyProtectedMember
+from mutagen.id3 import APIC, ID3
+from mutagen.mp3 import MP3
+
 import win32con
 # noinspection PyProtectedMember
 from kivy import Config
@@ -42,12 +48,6 @@ from kivy.uix.switch import Switch
 from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
 
-from mutagen import id3, File
-from mutagen.easyid3 import EasyID3
-# noinspection PyProtectedMember
-from mutagen.id3 import APIC, ID3
-from mutagen.mp3 import MP3
-
 from win10toast import ToastNotifier
 
 import win32api
@@ -56,6 +56,7 @@ from win32ui import CreateFileDialog
 import winxpgui
 
 from helper_classes import Constants, FileInfoLabel, CustomSpinner
+import main as main_function
 
 
 class TagEditor(App, BoxLayout):
@@ -77,6 +78,7 @@ class TagEditor(App, BoxLayout):
 
         self.constants = Constants()
         self.title = self.constants.window_title
+        self.icon = self.icon
 
         # layouts
         self.main_layout = BoxLayout(orientation='horizontal')
@@ -640,4 +642,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main_function.main()
