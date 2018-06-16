@@ -122,8 +122,7 @@ class TagEditor(App, BoxLayout):
             else:
                 win32gui.ShowWindow(win32gui.FindWindow(None, self.title), win32con.SW_NORMAL)
 
-        self.switch_full_label = FileInfoLabel(text="[ref=world]Full Screen[ref=world]",
-                                               markup=True)
+        self.switch_full_label = FileInfoLabel(text="Full Screen", markup=True)
         self.switch_full = Switch(active=True)
         self.switch_full.bind(active=_on_switch_select)
 
@@ -134,8 +133,8 @@ class TagEditor(App, BoxLayout):
         def _label_select(_widget: Widget, _):
             self.checkbox_all_albums_art.active = not self.checkbox_all_albums_art.active
 
-        label_all = FileInfoLabel(text="[ref=world]Apply this album art to all songs in the "
-                                       "album[ref=world]", markup=True)
+        label_all = FileInfoLabel(text="Apply this album art to all songs in the album",
+                                  markup=True)
         label_all.bind(on_ref_press=_label_select)
 
         for widget in label_all, self.checkbox_all_albums_art:
