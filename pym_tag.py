@@ -78,7 +78,7 @@ class TagEditor(App, BoxLayout):
 
         self.constants = Constants()
         self.title = self.constants.window_title
-        self.icon = self.icon
+        self.icon = os.path.join('extras', 'images', 'default_music_one.png')
 
         # layouts
         self.main_layout = BoxLayout(orientation='horizontal')
@@ -100,7 +100,7 @@ class TagEditor(App, BoxLayout):
                                                hint_text=self.constants[key],
                                                multiline=False,
                                                font_size='20sp',
-                                               background_color=(0, 255, 255, 0.8))
+                                               background_color=(0, 0, 255, 0.8))
                                 for key in self.constants}
 
         # checkbox function which will be called when checkbox is selected

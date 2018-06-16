@@ -20,7 +20,7 @@ class CustomSpinnerOption(SpinnerOption):
     """
         Class for custom spinner
     """
-    background_color = [255, 0, 255, 0.5]
+    background_color = [255, 0, 255, 0.8]
 
 
 class CustomSpinner(Spinner, Button):
@@ -49,7 +49,7 @@ class Constants(OrderedDict):
         self.genre = 'Genre'
         self.tracknumber = 'Track Number'
 
-        self.window_title = "Musical - Music Tag Editor"
+        self.window_title = "PyMTag - MP3 Tag Editor"
 
         tag_covers = ['default_music_one.png', 'default_music_two.png']
         self.default_tag_cover = os.path.join('extras', 'images', random.choice(tag_covers))
