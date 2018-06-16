@@ -1,7 +1,7 @@
 # PyMTag
 MP3 Tag Editor in Python
 
-<img src='https://github.com/24Naman/PyMTag/blob/master/screenshot.png' />
+<img src='https://github.com/24Naman/PyMTag/blob/master/Screenshot.png' />
 
 <br />
 
