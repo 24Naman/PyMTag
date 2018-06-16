@@ -271,7 +271,6 @@ class TagEditor(App, BoxLayout):
         else:
             self.image_cover_art.clear_widgets()
 
-        self.checkbox_all_albums_art.disabled = True
         TagEditor.FILE_OPENED = False
 
         self.to_delete.cleanup()
@@ -607,11 +606,6 @@ class TagEditor(App, BoxLayout):
         # specified strings.
         window_handler = win32gui.FindWindow(None, self.title)
 
-        style = win32gui.GetWindowLong(window_handler, win32con.GWL_STYLE)
-        style = style & (gwl_style_caption | gwl_style_thickframe |
-                         gwl_style_minimizebox | gwl_style_maximizebox | gwl_style_sysmenu)
-        win32gui.SetWindowLong(window_handler, win32con.GWL_STYLE, style)
-
         # making window transparent
         win32gui.SetWindowLong(window_handler, win32con.GWL_EXSTYLE,
                                win32gui.GetWindowLong(window_handler, win32con.GWL_EXSTYLE) |
@@ -622,7 +616,7 @@ class TagEditor(App, BoxLayout):
                                             win32con.LWA_ALPHA)
 
         # opening window in maximized mode
-        win32gui.ShowWindow(window_handler, win32con.SW_NORMAL)
+        win32gui.ShowWindow(window_handler, win32con.SW_MAXIMIZE)
 
     def on_stop(self):
         """
