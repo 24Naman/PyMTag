@@ -76,13 +76,12 @@ class FileInfoLabel(Label):
     """
 
     def __init__(self, text: str, **kwargs) -> None:
-        kwargs['text'] = f'[b][i][size=15][color=000000]{text}[/color][/i][/b]'
+        kwargs['text'] = f"[b][i][size=15][color=000000]{text}[/color][/font]f[/i][/b]"
         kwargs['size_hint_x'] = 1
         kwargs['size_hint_y'] = 0.25
         kwargs['markup'] = True
 
         super().__init__(**kwargs)
-        self.text = text
 
     @property
     def pretty_text(self) -> str:
