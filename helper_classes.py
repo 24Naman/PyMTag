@@ -23,6 +23,15 @@ class CustomSpinnerOption(SpinnerOption):
     background_color = [255, 0, 255, 0.5]
 
 
+class CustomSpinner(Spinner, Button):
+    """
+        Class for custom spinner
+    """
+    background_color = [255, 0, 255, 0.5]
+
+    option_cls = ObjectProperty(CustomSpinnerOption)
+
+
 # noinspection SpellCheckingInspection
 class Constants(OrderedDict):
     """
@@ -84,12 +93,3 @@ class FileInfoLabel(Label):
     def pretty_text(self, value: str) -> None:
         self.text = f"[b][i][size=15][color=000000]{os.path.basename(value)}[/color][/font]" \
                     f"[/i][/b]"
-
-
-class CustomSpinner(Spinner, Button):
-    """
-        Class for custom spinner
-    """
-    background_color = [255, 0, 255, 0.5]
-
-    option_cls = ObjectProperty(CustomSpinnerOption)
