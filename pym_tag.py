@@ -198,8 +198,7 @@ class TagEditor(App, BoxLayout):
         yield file
         file.save()
 
-    @staticmethod
-    def _return_popup(title: AnyStr, content: Widget, size: Tuple = (500, 100),
+    def _return_popup(self, title: AnyStr, content: Widget, size: Tuple = (500, 100),
                       size_hint=(None, None)) -> Popup:
         """
             This method is for creating a unified Popup which will have a similar design
@@ -216,8 +215,19 @@ class TagEditor(App, BoxLayout):
         :return: the generated Popup
         :rtype: Popup
         """
-        return Popup(title=title, content=content, size=size, size_hint=size_hint,
-                     title_align='center')
+        popup = Popup(title=f"{self.constants.name} - {title}", content=content, size=size,
+                      size_hint=size_hint, title_align='center')
+
+        # popup_background = ModalView()
+        # popup_background.add_widget(Image(source=self.constants.rocket_image))
+        # popup.background = self.constants.rocket_image
+        popup.background_color = [0, 255, 220, 0.9]
+        popup.title_size = 18       # size in sp 255 0 120
+        popup.title_color = [1, 255, 0, 1]        # rgba (pink)
+        popup.separator_color = [1, 0, 255, 255]    # rgba (cyan)
+        popup.separator_height = 5
+
+        return popup
 
     def _on_file_drop(self, _, file_path: bytes):
         """
@@ -274,6 +284,7 @@ class TagEditor(App, BoxLayout):
             self.image_cover_art.clear_widgets()
 
         TagEditor.FILE_OPENED = False
+        self.checkbox_all_albums_art.disabled = True
 
         self.to_delete.cleanup()
         self.to_delete = tempfile.TemporaryDirectory()
@@ -290,10 +301,10 @@ class TagEditor(App, BoxLayout):
         :return:
         :rtype:
         """
+        self.reset_widgets(None)
         self.checkbox_all_albums_art.disabled = False
 
         # True, None for fileopen and False, File_Name for file save dialog
-        self.reset_widgets(None)
         if not file_path:
             file_dialog = CreateFileDialog(True, ".mp3", None, 0, "MP3 Files (*.mp3)|*.mp3", None)
             file_dialog.DoModal()
@@ -361,16 +372,21 @@ class TagEditor(App, BoxLayout):
 
         file = None
         to_return = False
+        save_file_content = f"Saving {self.text_input_dict['title']}"
+        saving_file = self._return_popup(title="Saving File", content=Label(text=save_file_content))
+
         try:
             file = MP3(self.file_path, ID3=ID3)
         except IndexError:
-            self._return_popup(title="Error", content=Label(text='Please Open a file'),
+            self._return_popup(title="Error", content=Label(text='Please Open a file....'),
                                size=(200, 200)).open()
             to_return = True
 
         with self.saving(file) as file:
             if to_return:
                 return
+
+            saving_file.open()
             with suppress(id3.error):
                 file.delete()
                 file.add_tags()
@@ -408,6 +424,7 @@ class TagEditor(App, BoxLayout):
             os.rename(self.file_path, self.file_name)
             self.file_path = self.file_name
 
+        saving_file.dismiss()
         self._return_popup(title='MP3 File Saved', content=Label(text=f'{self.file_name} Saved'),
                            size=(800, 200)).open()
 
@@ -416,8 +433,12 @@ class TagEditor(App, BoxLayout):
         TagEditor.FILE_OPENED = True
 
         if self.checkbox_all_albums_art.active:
-            self.album_art_all_songs(self.text_input_dict['album'].text,
-                                     self.text_input_dict['albumartist'].text)
+            try:
+                self.album_art_all_songs(self.text_input_dict['album'].text,
+                                         self.text_input_dict['albumartist'].text)
+            except AssertionError:
+                self._return_popup("Missing Fields",
+                                   content=FileInfoLabel(text="Album and Album Artist is Missing"))
 
         # resetting the widgets after saving the file
         self.reset_widgets(None)
@@ -572,6 +593,8 @@ class TagEditor(App, BoxLayout):
         :param album_artist: the album artist name which album art has to be changed
         :type album_artist: str
         """
+        assert not album == "" and not album_artist == ""
+
         for file_name in glob(f"{os.path.dirname(self.file_path)}/*.mp3"):
             music_file = EasyID3(file_name)
 

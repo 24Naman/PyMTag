@@ -49,11 +49,13 @@ class Constants(OrderedDict):
         self.genre = 'Genre'
         self.tracknumber = 'Track Number'
 
-        self.window_title = "PyMTag - MP3 Tag Editor"
+        self.name = "PyMTag"
+        self.window_title = f"{self.name} - MP3 Tag Editor"
 
         tag_covers = ['default_music_one.png', 'default_music_two.png']
         self.default_tag_cover = os.path.join('extras', 'images', random.choice(tag_covers))
 
+        self.rocket_image = os.path.join('extras', 'images', 'rocket.png')
         self.switch_icon = os.path.join("extras", "switch_icon.png")
 
         # File renaming options
@@ -76,7 +78,9 @@ class FileInfoLabel(Label):
     """
 
     def __init__(self, text: str, **kwargs) -> None:
-        kwargs['text'] = f"[b][i][size=15][color=000000]{text}[/color][/font]f[/i][/b]"
+        self.text = f"[b][i][size=15][color=000000]{text}[/color][/font][/i][/b]"
+
+        kwargs['text'] = self.text
         kwargs['size_hint_x'] = 1
         kwargs['size_hint_y'] = 0.25
         kwargs['markup'] = True
@@ -93,4 +97,4 @@ class FileInfoLabel(Label):
     @pretty_text.setter
     def pretty_text(self, value: str) -> None:
         self.text = f"[b][i][size=15][color=000000]{os.path.basename(value)}[/color][/font]" \
-                    f"[/i][/b]"
+                    "[/i][/b]"
