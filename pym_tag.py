@@ -111,6 +111,7 @@ class TagEditor(App, BoxLayout):
         self.switch_layout = BoxLayout(orientation='horizontal')
         self.checkbox_all_albums_art = CheckBox(active=True, color=[0, 0, 0, 1])
         self.checkbox_all_albums_art.bind(active=_on_checkbox_select)
+        self.checkbox_all_albums_art.disabled = True
 
         # switch for full screen
         def _on_switch_select(_widget: Switch, _):
@@ -268,6 +269,7 @@ class TagEditor(App, BoxLayout):
         else:
             self.image_cover_art.clear_widgets()
 
+        self.checkbox_all_albums_art.disabled = True
         TagEditor.FILE_OPENED = False
 
         self.to_delete.cleanup()
@@ -285,6 +287,7 @@ class TagEditor(App, BoxLayout):
         :return:
         :rtype:
         """
+        self.checkbox_all_albums_art.disabled = False
 
         # True, None for fileopen and False, File_Name for file save dialog
         self.reset_widgets(None)
