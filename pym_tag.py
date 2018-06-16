@@ -593,14 +593,6 @@ class TagEditor(App, BoxLayout):
         # window style values
         # reference ->
         # https://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx
-        gwl_style_dlgframe = 0x00400000
-        gwl_style_sysmenu = 0x00080000
-        gwl_style_thickframe = 0x00040000
-
-        gwl_style_minimizebox = 0x00020000
-        gwl_style_maximizebox = 0x00010000
-
-        gwl_style_caption = gwl_style_dlgframe
 
         # Retrieves a handle to the top - level window whose class name and window name match the
         # specified strings.
