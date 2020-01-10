@@ -19,6 +19,7 @@
 
 import os
 import tempfile
+import pathlib
 from contextlib import suppress, contextmanager
 from functools import partial
 from glob import glob
@@ -44,10 +45,9 @@ from kivy.uix.checkbox import CheckBox
 from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
+from kivy.uix.switch import Switch
 from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
-
-from win10toast import ToastNotifier
 
 import win32api
 import win32gui
@@ -86,13 +86,13 @@ class TagEditor(App, BoxLayout):
         self.music_file_tag_layout = BoxLayout(orientation='vertical', size_hint=(0.5, 1))
 
         self.image_cover_art = Image(source=self.constants.default_tag_cover)
-        # self.label_file_name = FileInfoLabel('Open A File')
+        self.label_file_name = FileInfoLabel('Open A File')
         self.button_album_art_change = Button(text="Options", size_hint=(0.25, 0.1),
                                               pos_hint={'center_x': 0.5},
                                               background_color=(255, 0, 0, 0.4),
                                               background_normal='')
 
-        for widget in (self.image_cover_art, self.button_album_art_change):
+        for widget in (self.image_cover_art, self.button_album_art_change, self.label_file_name):
             self.music_file_info_layout.add_widget(widget)
 
         self.text_input_dict = {key: TextInput(hint_text_color=[26, 12, 232, 1],
@@ -109,24 +109,45 @@ class TagEditor(App, BoxLayout):
                     .open()
 
         self.checkbox_layout = BoxLayout(orientation='horizontal')
-        self.checkbox_all_albums_art = CheckBox(active=True, color=[0, 0, 0, 1])
+        self.switch_layout = BoxLayout(orientation='horizontal')
+        self.checkbox_all_albums_art = CheckBox(active=False, color=[0, 0, 0, 1])
         self.checkbox_all_albums_art.bind(active=_on_checkbox_select)
         self.checkbox_all_albums_art.disabled = True
+
+        # switch for toggling full screen
+        def _on_switch_select(_widget: Switch, _):
+            if _widget.active:
+                win32gui.ShowWindow(win32gui.FindWindow(None, self.title), win32con.SW_MAXIMIZE)
+            else:
+                win32gui.ShowWindow(win32gui.FindWindow(None, self.title), win32con.SW_NORMAL)
+
+        self.switch_full_label = FileInfoLabel(text="Full Screen", markup=True)
+        self.switch_full = Switch(active=True)
+        self.switch_full.bind(active=_on_switch_select)
+
+        # customizing switch
+        self.switch_full.canvas.children[2].source = self.constants.switch_icon
 
         # switch for applying album art to all songs of the same album
         def _label_select(_widget: Widget, _):
             self.checkbox_all_albums_art.active = not self.checkbox_all_albums_art.active
 
-        # label_all = FileInfoLabel(text="Apply this album art to all songs in the album",
-        #                           markup=True)
-        # label_all.bind(on_ref_press=_label_select)
+        label_all = FileInfoLabel(text="Apply this album art to all songs in the album",
+                                  markup=True)
+        label_all.bind(on_ref_press=_label_select)
 
-        for widget in [self.checkbox_all_albums_art]:
+        for widget in label_all, self.checkbox_all_albums_art:
             self.checkbox_layout.add_widget(widget)
 
-        self.button_open = Button(text='Open', background_color=(255, 0, 0, 1), background_normal='')
-        self.button_save = Button(text='Save', background_color=(255, 0, 0, 1), background_normal='')
-        self.button_reset = Button(text='Reset', background_color=(255, 0, 0, 1), background_normal='')
+        for widget in self.switch_full_label, self.switch_full:
+            self.switch_layout.add_widget(widget)
+
+        self.button_open = Button(text='Open', background_color=(255, 0, 0, 1),
+                                  background_normal='')
+        self.button_save = Button(text='Save', background_color=(255, 0, 0, 1),
+                                  background_normal='')
+        self.button_reset = Button(text='Reset', background_color=(255, 0, 0, 1),
+                                   background_normal='')
         self.naming_opt = "no-rename"
 
         def _naming_option_selector(_, selected_text):
@@ -174,7 +195,7 @@ class TagEditor(App, BoxLayout):
         :type file: File
         """
         yield file
-        file.save()
+        file.save(v2_version=3, v1=2)
 
     def _return_popup(self, title: AnyStr, content: Widget, size: Tuple = (500, 100),
                       size_hint=(None, None)) -> Popup:
@@ -235,7 +256,7 @@ class TagEditor(App, BoxLayout):
         for key in self.text_input_dict:
             self.music_file_tag_layout.add_widget(widget=self.text_input_dict[key])
 
-        for widget in (self.naming_option_spinner, self.checkbox_layout, self.layout_button):
+        for widget in self.naming_option_spinner, self.checkbox_layout, self.switch_layout, self.layout_button:
             self.music_file_tag_layout.add_widget(widget)
 
         for widget in self.music_file_info_layout, self.music_file_tag_layout:
@@ -249,7 +270,7 @@ class TagEditor(App, BoxLayout):
         """
             Reset all field to original state
         """
-        # self.label_file_name.pretty_text = 'Open A File'
+        self.label_file_name.pretty_text = 'Open A File'
         self.title = self.constants.window_title
 
         for key in self.text_input_dict:
@@ -296,11 +317,7 @@ class TagEditor(App, BoxLayout):
 
         # if no file is selected or cancel button is pressed
         if any([self.file_name == '', self.file_path == [], self.file_extension == '']):
-            # if file open operation is cancelled, show a notification
-            win_notification = ToastNotifier()
-            win_notification.show_toast(self.title, "File open operation cancelled",
-                                        icon_path=self.constants.default_tag_cover,
-                                        duration=5)
+            # if file open operation is cancelled
             return
 
         try:
@@ -321,7 +338,7 @@ class TagEditor(App, BoxLayout):
             self.image_cover_art.reload()
 
         self.title += f" -> {self.file_name}"
-        # self.label_file_name.pretty_text = self.file_name
+        self.label_file_name.pretty_text = self.file_name
 
         # filling the text field with the metadata of the song
         with suppress(KeyError):
@@ -369,9 +386,9 @@ class TagEditor(App, BoxLayout):
                 file.add_tags()
 
             if not self.image_cover_art.source == self.constants.default_tag_cover:
-                with open(self.image_cover_art.source, 'rb') as alb_art:
-                    file.tags.add(APIC(encoding=1, mime='image/png', type=3, desc=u'Cover',
-                                       data=alb_art.read()))
+                with open(self.image_cover_art.source, 'rb') as album_art_file:
+                    file.tags.add(APIC(mime=f"image/{pathlib.Path(self.image_cover_art.source).suffix.strip('.')}",
+                                       type=3, desc=u'Cover', encoding=1, data=album_art_file.read()))
 
             else:
                 with suppress(KeyError):
@@ -387,6 +404,20 @@ class TagEditor(App, BoxLayout):
             for tag in self.text_input_dict:
                 music_file[tag] = self.text_input_dict[tag].text
 
+            if not self.image_cover_art.source == self.constants.default_tag_cover:
+                with open(self.image_cover_art.source, 'rb') as album_art_file:
+                    file.tags.add(APIC(mime=f"image/{pathlib.Path(self.image_cover_art.source).suffix.strip('.')}",
+                                       type=3, desc=u'Cover', encoding=1, data=album_art_file.read()))
+
+            else:
+                with suppress(KeyError):
+                    if 'APIC:' in file:
+                        file.tags.pop('APIC:')
+                    else:
+                        file.tags.pop('APIC:Cover')
+
+                self.checkbox_all_albums_art.active = False
+
         self.file_name = self.file_path
 
         # if the option is not "no-rename": "Don't Rename"
@@ -398,7 +429,13 @@ class TagEditor(App, BoxLayout):
             # renaming the modified file with name according to the chosen option by the user
             self.file_name = self.naming_opt.format(Artist=artist, Album=album, Title=title)
             self.file_name = rf"{os.path.dirname(self.file_path)}\{self.file_name}.mp3"
-            os.rename(self.file_path, self.file_name)
+            try:
+                os.rename(self.file_path, self.file_name)
+
+            except FileExistsError:
+                os.remove(self.file_name)
+                os.rename(self.file_path, self.file_name)
+
             self.file_path = self.file_name
 
         saving_file.dismiss()
@@ -477,8 +514,7 @@ class TagEditor(App, BoxLayout):
         :type downloaded: Boolean
         """
         art_picker.dismiss()
-        file_types = "JPEG File (*.jpeg), jpg File (*.jpg) | *.jpg; *.jpeg; | PNG File (*.png) | " \
-                     "*.png ||"
+        file_types = "JPEG File, jpg File, PNG File | *.jpg; *.jpeg; *.png; | GIF File | *.gif; |"
 
         # True for fileopen and False for filesave dialog
         # opening file dialog in Downloads folder if the image was searched online
@@ -555,7 +591,7 @@ class TagEditor(App, BoxLayout):
         :type _: Button
         """
         art_picker.dismiss()
-        file_dialog = CreateFileDialog(False, None, "album_art.png", 0, "*.png| PNG File", None)
+        file_dialog = CreateFileDialog(False, None, "album_art.jpeg", 0, "*.jpeg| JPEG File", None)
         file_dialog.DoModal()
 
         file_path = file_dialog.GetPathNames()
@@ -572,14 +608,14 @@ class TagEditor(App, BoxLayout):
         """
         assert not album == "" and not album_artist == ""
 
-        for file_name in glob(f"{os.path.dirname(self.file_path)}/*.mp3"):
+        for file_name in glob(f"{os.path.dirname(self.file_path[0])}/*.mp3"):
             music_file = EasyID3(file_name)
 
             if music_file['album'][0] == album and music_file['albumartist'][0] == album_artist:
                 with self.saving(MP3(file_name)) as mp3_file:
                     with open(self.image_cover_art.source, 'rb') as alb_art:
-                        mp3_file.tags.add(APIC(encoding=1, mime='image/png', type=3, desc=u'Cover',
-                                               data=alb_art.read()))
+                        mp3_file.tags.add(APIC(mime=f'image/{pathlib.Path(self.image_cover_art.source).suffix}',
+                                               type=3, desc=u'Cover', data=alb_art.read(), encoding=1))
 
     def on_start(self):
         """
