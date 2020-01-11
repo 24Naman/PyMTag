@@ -55,7 +55,6 @@ from win32ui import CreateFileDialog
 import winxpgui
 
 from helper_classes import Constants, FileInfoLabel, CustomSpinner
-import main as main_function
 
 
 class TagEditor(App, BoxLayout):
@@ -77,7 +76,7 @@ class TagEditor(App, BoxLayout):
 
         self.constants = Constants()
         self.title = self.constants.window_title
-        self.icon = os.path.join('extras', 'images', 'default_music_one.png')
+        self.icon = os.path.join('extras', 'images', 'app_icon.ico')
 
         # layouts
         self.main_layout = BoxLayout(orientation='horizontal')
@@ -663,7 +662,3 @@ def main():
         Main Function
     """
     TagEditor().run()
-
-
-if __name__ == '__main__':
-    main_function.main()
