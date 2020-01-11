@@ -55,7 +55,6 @@ from win32ui import CreateFileDialog
 import winxpgui
 
 from helper_classes import Constants, FileInfoLabel, CustomSpinner
-import main as main_function
 
 
 class TagEditor(App, BoxLayout):
@@ -77,7 +76,7 @@ class TagEditor(App, BoxLayout):
 
         self.constants = Constants()
         self.title = self.constants.window_title
-        self.icon = os.path.join('extras', 'images', 'default_music_one.png')
+        self.icon = os.path.join('extras', 'images', 'app_icon.ico')
 
         # layouts
         self.main_layout = BoxLayout(orientation='horizontal')
@@ -121,13 +120,6 @@ class TagEditor(App, BoxLayout):
             else:
                 win32gui.ShowWindow(win32gui.FindWindow(None, self.title), win32con.SW_NORMAL)
 
-        self.switch_full_label = FileInfoLabel(text="Full Screen", markup=True)
-        self.switch_full = Switch(active=True)
-        self.switch_full.bind(active=_on_switch_select)
-
-        # customizing switch
-        self.switch_full.canvas.children[2].source = self.constants.switch_icon
-
         # switch for applying album art to all songs of the same album
         def _label_select(_widget: Widget, _):
             self.checkbox_all_albums_art.active = not self.checkbox_all_albums_art.active
@@ -138,9 +130,6 @@ class TagEditor(App, BoxLayout):
 
         for widget in label_all, self.checkbox_all_albums_art:
             self.checkbox_layout.add_widget(widget)
-
-        for widget in self.switch_full_label, self.switch_full:
-            self.switch_layout.add_widget(widget)
 
         self.button_open = Button(text='Open', background_color=(255, 0, 0, 1),
                                   background_normal='')
@@ -256,7 +245,7 @@ class TagEditor(App, BoxLayout):
         for key in self.text_input_dict:
             self.music_file_tag_layout.add_widget(widget=self.text_input_dict[key])
 
-        for widget in self.naming_option_spinner, self.checkbox_layout, self.switch_layout, self.layout_button:
+        for widget in self.naming_option_spinner, self.checkbox_layout, self.layout_button:
             self.music_file_tag_layout.add_widget(widget)
 
         for widget in self.music_file_info_layout, self.music_file_tag_layout:
@@ -337,7 +326,7 @@ class TagEditor(App, BoxLayout):
             self.image_cover_art.source = os.path.join(self.to_delete.name, 'image.jpeg')
             self.image_cover_art.reload()
 
-        self.title += f" -> {self.file_name}"
+        self.title += f" -> {self.file_path}"
         self.label_file_name.pretty_text = self.file_name
 
         # filling the text field with the metadata of the song
@@ -663,7 +652,3 @@ def main():
         Main Function
     """
     TagEditor().run()
-
-
-if __name__ == '__main__':
-    main_function.main()
