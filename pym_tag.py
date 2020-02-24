@@ -18,25 +18,16 @@
 # pylint: disable=no-name-in-module
 
 import os
-import tempfile
 import pathlib
+import shutil
+import tempfile
 from contextlib import suppress, contextmanager
 from functools import partial
 from glob import glob
 from typing import AnyStr, Tuple
-
-import shutil
 from urllib.parse import urlunparse, quote, urlencode
 
-from mutagen import id3, File
-from mutagen.easyid3 import EasyID3
 # noinspection PyProtectedMember
-from mutagen.id3 import APIC, ID3
-from mutagen.mp3 import MP3
-
-import win32con
-# noinspection PyProtectedMember
-from kivy import Config
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
@@ -45,16 +36,16 @@ from kivy.uix.checkbox import CheckBox
 from kivy.uix.image import Image
 from kivy.uix.label import Label
 from kivy.uix.popup import Popup
-from kivy.uix.switch import Switch
 from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
-
-import win32api
-import win32gui
+from mutagen import id3, File
+from mutagen.easyid3 import EasyID3
+# noinspection PyProtectedMember
+from mutagen.id3 import APIC, ID3
+from mutagen.mp3 import MP3
 from win32ui import CreateFileDialog
-import winxpgui
 
-from helper_classes import Constants, FileInfoLabel, CustomSpinner
+from helper_classes import Constants, PymLabel, CustomSpinner
 
 
 class TagEditor(App, BoxLayout):
@@ -85,7 +76,7 @@ class TagEditor(App, BoxLayout):
         self.music_file_tag_layout = BoxLayout(orientation='vertical', size_hint=(0.5, 1))
 
         self.image_cover_art = Image(source=self.constants.default_tag_cover)
-        self.label_file_name = FileInfoLabel('Open A File')
+        self.label_file_name = PymLabel('Open A File')
         self.button_album_art_change = Button(text="Options", size_hint=(0.25, 0.1),
                                               pos_hint={'center_x': 0.5},
                                               background_color=(255, 0, 0, 0.4),
@@ -97,6 +88,7 @@ class TagEditor(App, BoxLayout):
         self.text_input_dict = {key: TextInput(hint_text_color=[26, 12, 232, 1],
                                                hint_text=self.constants[key],
                                                multiline=False,
+                                               write_tab=False,
                                                font_size='20sp',
                                                background_color=(0, 0, 255, 0.8))
                                 for key in self.constants}
@@ -113,18 +105,11 @@ class TagEditor(App, BoxLayout):
         self.checkbox_all_albums_art.bind(active=_on_checkbox_select)
         self.checkbox_all_albums_art.disabled = True
 
-        # switch for toggling full screen
-        def _on_switch_select(_widget: Switch, _):
-            if _widget.active:
-                win32gui.ShowWindow(win32gui.FindWindow(None, self.title), win32con.SW_MAXIMIZE)
-            else:
-                win32gui.ShowWindow(win32gui.FindWindow(None, self.title), win32con.SW_NORMAL)
-
         # switch for applying album art to all songs of the same album
         def _label_select(_widget: Widget, _):
             self.checkbox_all_albums_art.active = not self.checkbox_all_albums_art.active
 
-        label_all = FileInfoLabel(text="Apply this album art to all songs in the album",
+        label_all = PymLabel(text="Apply this album art to all songs in the album",
                                   markup=True)
         label_all.bind(on_ref_press=_label_select)
 
@@ -217,25 +202,12 @@ class TagEditor(App, BoxLayout):
 
         return popup
 
-    def _on_file_drop(self, _, file_path: bytes):
-        """
-
-        :param _:
-        :type _: kivy.core.window.window_sdl2.WindowSDL
-        :param file_path:
-        :type file_path: bytes
-        """
-        self.file_open(None, file_path=file_path.decode())
-
     def build(self):
         """
             building the App
         :return: the created window
         :rtype: TagEditor
         """
-        # adding support for drag and drop file
-        Window.bind(on_dropfile=self._on_file_drop)
-
         self.icon = self.constants.default_tag_cover
 
         # window background color
@@ -264,9 +236,11 @@ class TagEditor(App, BoxLayout):
 
         for key in self.text_input_dict:
             self.text_input_dict[key].text = ''
+
         if os.path.exists(os.path.join(os.getcwd(), self.constants.default_tag_cover)):
             self.image_cover_art.source = self.constants.default_tag_cover
             self.image_cover_art.reload()
+
         else:
             self.image_cover_art.clear_widgets()
 
@@ -295,29 +269,32 @@ class TagEditor(App, BoxLayout):
         if not file_path:
             file_dialog = CreateFileDialog(True, ".mp3", None, 0, "MP3 Files (*.mp3)|*.mp3", None)
             file_dialog.DoModal()
-            self.file_name, self.file_path, self.file_extension = \
-                file_dialog.GetFileName(), file_dialog.GetPathNames()[0], file_dialog.GetFileExt()
+            self.file_name = file_dialog.GetFileName()
+            self.file_path = file_dialog.GetPathNames()[0]
+            self.file_extension = file_dialog.GetFileExt()
 
         else:
             file_path = file_path
-            self.file_name, self.file_path, self.file_extension = \
-                os.path.basename(file_path), os.path.dirname(file_path), \
-                os.path.splitext(file_path)[-1]
+            self.file_name = os.path.basename(file_path)
+            self.file_path = os.path.dirname(file_path)
+            self.file_extension = os.path.splitext(file_path)[-1]
 
         # if no file is selected or cancel button is pressed
-        if any([self.file_name == '', self.file_path == [], self.file_extension == '']):
+        if self.file_name == '' or self.file_path == [] or self.file_extension == '':
             # if file open operation is cancelled
             return
 
         try:
-            audio_file, mp3_file = EasyID3(self.file_path), MP3(self.file_path)
+            audio_file = EasyID3(self.file_path)
+            mp3_file = MP3(self.file_path)
 
         except id3.ID3NoHeaderError:
             # adding id3 header tags if the file has none
             with self.saving(File(self.file_path, easy=True)) as file:
                 file.add_tags()
 
-            audio_file, mp3_file = EasyID3(self.file_path), MP3(self.file_path)
+            audio_file = EasyID3(self.file_path)
+            mp3_file = MP3(self.file_path)
 
         if any(['APIC:Cover' in mp3_file, 'APIC:' in mp3_file]):
             with open(os.path.join(self.to_delete.name, 'image.jpeg'), 'wb') as img:
@@ -349,8 +326,7 @@ class TagEditor(App, BoxLayout):
         """
 
         if not TagEditor.FILE_OPENED:
-            self._return_popup(title='No file opened',
-                               content=Label(text="Please open a file..."), ).open()
+            self._return_popup(title='No file opened', content=Label(text="Please open a file...")).open()
             return
 
         file = None
@@ -441,7 +417,7 @@ class TagEditor(App, BoxLayout):
                                          self.text_input_dict['albumartist'].text)
             except AssertionError:
                 self._return_popup("Missing Fields",
-                                   content=FileInfoLabel(text="Album and Album Artist is Missing"))
+                                   content=PymLabel(text="Album and Album Artist is Missing"))
 
         # resetting the widgets after saving the file
         self.reset_widgets(None)
@@ -605,37 +581,6 @@ class TagEditor(App, BoxLayout):
                     with open(self.image_cover_art.source, 'rb') as alb_art:
                         mp3_file.tags.add(APIC(mime=f'image/{pathlib.Path(self.image_cover_art.source).suffix}',
                                                type=3, desc=u'Cover', data=alb_art.read(), encoding=1))
-
-    def on_start(self):
-        """
-            this will be called when the app will start
-            and it will do perform necessary modification
-        """
-
-        # ## Window Custom Configuration ## #
-        # making window non-resizable and border less
-        Config.set('graphics', 'resizable', False)
-        Config.set('graphics', 'borderless', True)
-
-        # window style values
-        # reference ->
-        # https://msdn.microsoft.com/en-us/library/windows/desktop/ms632600(v=vs.85).aspx
-
-        # Retrieves a handle to the top - level window whose class name and window name match the
-        # specified strings.
-        window_handler = win32gui.FindWindow(None, self.title)
-
-        # making window transparent
-        win32gui.SetWindowLong(window_handler, win32con.GWL_EXSTYLE,
-                               win32gui.GetWindowLong(window_handler, win32con.GWL_EXSTYLE) |
-                               win32con.WS_EX_LAYERED)
-
-        # Set the opacity and transparency color key of the windows
-        winxpgui.SetLayeredWindowAttributes(window_handler, win32api.RGB(0, 0, 0), 220,
-                                            win32con.LWA_ALPHA)
-
-        # opening window in maximized mode
-        win32gui.ShowWindow(window_handler, win32con.SW_MAXIMIZE)
 
     def on_stop(self):
         """

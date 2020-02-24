@@ -4,12 +4,17 @@
       <w>albumartist</w>
       <w>apic</w>
       <w>argb</w>
+      <w>borderless</w>
+      <w>clearcolor</w>
+      <w>filesave</w>
+      <w>fullscreen</w>
       <w>kivy</w>
       <w>naman</w>
       <w>noconfirm</w>
       <w>noconsole</w>
       <w>pylint</w>
       <w>rgba</w>
+      <w>userprofile</w>
     </words>
   </dictionary>
 </component>

@@ -10,7 +10,6 @@
 import os
 import sys
 import logging
-from kivy_deps import sdl2, glew
 
 
 def main():
@@ -22,14 +21,13 @@ def main():
 
     python = sys.executable
     app_name = "PyMTag"
-    main_file = "main.py"
-    spec_cmd = rf"{python} -m PyInstaller -y --noconsole --name {app_name} --icon images/app_icon.ico main.py"
+    main_file = "py_main.py"
+    spec_cmd = rf"{python} -m PyInstaller -y --noconsole --name {app_name} --icon images/app_icon.ico py_main.py"
 
     logging.info(f"Generating Specification file...")
-    os.system(spec_cmd)
+    # os.system(spec_cmd)
 
-    print("Please Edit the spec file and press enter to continue...")
-    input()
+    input("Please Edit the spec file and press enter to continue...")
 
     logging.info(f"Generating Specification file generated: {app_name}.spec")
 

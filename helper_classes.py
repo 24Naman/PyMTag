@@ -41,6 +41,8 @@ class Constants(OrderedDict):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
+        self.app_icon = 'app_icon.ico'
+
         self.title = 'Title'
         self.artist = 'Artist'
         self.album = 'Album'
@@ -59,10 +61,10 @@ class Constants(OrderedDict):
         self.switch_icon = os.path.join("extras", "switch_icon.png")
 
         # File renaming options
-        self.rename = {"no-rename": "Don't Rename", "album-title": "{Album} - {Title}",
+        self.rename = {"no-rename": "Don't Rename", "title-album": "{Title} - {Album}",
+                       "album-title": "{Album} - {Title}",
                        "album-artist-title": "{Album} - {Artist} - {Title}",
-                       "artist-album-title": "{Artist} - {Album} - {Title}",
-                       "title-album": "{Title} - {Album}"}
+                       "artist-album-title": "{Artist} - {Album} - {Title}"}
 
     def __getitem__(self, item) -> AnyStr:
         return self.__dict__[item]
@@ -72,7 +74,7 @@ class Constants(OrderedDict):
         yield from ['title', 'artist', 'album', 'albumartist', 'date', 'genre', 'tracknumber']
 
 
-class FileInfoLabel(Label):
+class PymLabel(Label):
     """
         File Info Label
     """
