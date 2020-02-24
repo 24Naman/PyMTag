@@ -54,7 +54,7 @@ import win32gui
 from win32ui import CreateFileDialog
 import winxpgui
 
-from helper_classes import Constants, FileInfoLabel, CustomSpinner
+from helper_classes import Constants, PymLabel, CustomSpinner
 
 
 class TagEditor(App, BoxLayout):
@@ -85,7 +85,7 @@ class TagEditor(App, BoxLayout):
         self.music_file_tag_layout = BoxLayout(orientation='vertical', size_hint=(0.5, 1))
 
         self.image_cover_art = Image(source=self.constants.default_tag_cover)
-        self.label_file_name = FileInfoLabel('Open A File')
+        self.label_file_name = PymLabel('Open A File')
         self.button_album_art_change = Button(text="Options", size_hint=(0.25, 0.1),
                                               pos_hint={'center_x': 0.5},
                                               background_color=(255, 0, 0, 0.4),
@@ -124,8 +124,8 @@ class TagEditor(App, BoxLayout):
         def _label_select(_widget: Widget, _):
             self.checkbox_all_albums_art.active = not self.checkbox_all_albums_art.active
 
-        label_all = FileInfoLabel(text="Apply this album art to all songs in the album",
-                                  markup=True)
+        label_all = PymLabel(text="Apply this album art to all songs in the album",
+                             markup=True)
         label_all.bind(on_ref_press=_label_select)
 
         for widget in label_all, self.checkbox_all_albums_art:
@@ -236,7 +236,7 @@ class TagEditor(App, BoxLayout):
         # adding support for drag and drop file
         Window.bind(on_dropfile=self._on_file_drop)
 
-        self.icon = self.constants.default_tag_cover
+        self.icon = os.path.join('extras', 'images', 'app_icon.png')
 
         # window background color
         # noinspection SpellCheckingInspection
@@ -441,7 +441,7 @@ class TagEditor(App, BoxLayout):
                                          self.text_input_dict['albumartist'].text)
             except AssertionError:
                 self._return_popup("Missing Fields",
-                                   content=FileInfoLabel(text="Album and Album Artist is Missing"))
+                                   content=PymLabel(text="Album and Album Artist is Missing"))
 
         # resetting the widgets after saving the file
         self.reset_widgets(None)
