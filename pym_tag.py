@@ -21,13 +21,16 @@ import os
 import pathlib
 import shutil
 import tempfile
+import webbrowser
 from contextlib import suppress, contextmanager
 from functools import partial
 from glob import glob
+from time import time
 from typing import AnyStr, Tuple
 from urllib.parse import urlunparse, quote, urlencode
 
 # noinspection PyProtectedMember
+from win32ui import CreateFileDialog
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
@@ -43,7 +46,6 @@ from mutagen.easyid3 import EasyID3
 # noinspection PyProtectedMember
 from mutagen.id3 import APIC, ID3
 from mutagen.mp3 import MP3
-from win32ui import CreateFileDialog
 
 from helper_classes import Constants, PymLabel, CustomSpinner
 
@@ -109,8 +111,7 @@ class TagEditor(App, BoxLayout):
         def _label_select(_widget: Widget, _):
             self.checkbox_all_albums_art.active = not self.checkbox_all_albums_art.active
 
-        label_all = PymLabel(text="Apply this album art to all songs in the album",
-                                  markup=True)
+        label_all = PymLabel(text="Apply this album art to all songs in the album", markup=True)
         label_all.bind(on_ref_press=_label_select)
 
         for widget in label_all, self.checkbox_all_albums_art:
@@ -274,7 +275,6 @@ class TagEditor(App, BoxLayout):
             self.file_extension = file_dialog.GetFileExt()
 
         else:
-            file_path = file_path
             self.file_name = os.path.basename(file_path)
             self.file_path = os.path.dirname(file_path)
             self.file_extension = os.path.splitext(file_path)[-1]
@@ -519,7 +519,6 @@ class TagEditor(App, BoxLayout):
                                                     f"album art"}), ''))
 
         # open the default web browser to let the user download the image manually
-        import webbrowser
         webbrowser.open(search_url)
 
         self.album_art_local(_, downloaded=True, art_picker=art_picker)
@@ -556,7 +555,9 @@ class TagEditor(App, BoxLayout):
         :type _: Button
         """
         art_picker.dismiss()
-        file_dialog = CreateFileDialog(False, None, "album_art.jpeg", 0, "*.jpeg| JPEG File", None)
+        extract_file = f"{self.text_input_dict['album']}_{round(time())}.jpeg" if self.text_input_dict['album'] != "" \
+            else f"album_art_{round(time())}.jpeg"
+        file_dialog = CreateFileDialog(False, None, extract_file, 0, "*.jpeg| JPEG File", None)
         file_dialog.DoModal()
 
         file_path = file_dialog.GetPathNames()
