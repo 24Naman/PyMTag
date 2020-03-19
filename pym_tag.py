@@ -387,12 +387,13 @@ class TagEditor(App, BoxLayout):
 
         # if the option is not "no-rename": "Don't Rename"
         if self.naming_opt != list(self.constants.rename.keys())[0]:
-            artist = music_file['albumartist'][0]
+            artist = music_file['artist'][0]
+            albumartist = music_file['albumartist'][0]
             album = music_file['album'][0]
             title = music_file['title'][0]
 
             # renaming the modified file with name according to the chosen option by the user
-            self.file_name = self.naming_opt.format(Artist=artist, Album=album, Title=title)
+            self.file_name = self.naming_opt.format(Artist=artist, AlbumArtist=albumartist, Album=album, Title=title)
             self.file_name = rf"{os.path.dirname(self.file_path)}\{self.file_name}.mp3"
             try:
                 os.rename(self.file_path, self.file_name)

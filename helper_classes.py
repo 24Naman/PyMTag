@@ -64,7 +64,10 @@ class Constants(OrderedDict):
         self.rename = {"no-rename": "Don't Rename", "title-album": "{Title} - {Album}",
                        "album-title": "{Album} - {Title}",
                        "album-artist-title": "{Album} - {Artist} - {Title}",
-                       "artist-album-title": "{Artist} - {Album} - {Title}"}
+                       "artist-album-title": "{Artist} - {Album} - {Title}",
+                       "album-albumartist-title": "{Album} - {AlbumArtist} - {Title}",
+                       "albumartist-album-title": "{AlbumArtist} - {Album} - {Title}"
+                       }
 
     def __getitem__(self, item) -> AnyStr:
         return self.__dict__[item]
