@@ -55,10 +55,10 @@ class Constants(OrderedDict):
         self.window_title = f"{self.name} - MP3 Tag Editor"
 
         tag_covers = ['default_music_one.png', 'default_music_two.png']
-        self.default_tag_cover = os.path.join('extras', 'images', random.choice(tag_covers))
+        self.default_tag_cover = os.path.join('res', random.choice(tag_covers))
 
-        self.rocket_image = os.path.join('extras', 'images', 'rocket.png')
-        self.switch_icon = os.path.join("extras", "switch_icon.png")
+        self.rocket_image = os.path.join('res', 'rocket.png')
+        self.switch_icon = os.path.join("res", "switch_icon.png")
 
         # File renaming options
         self.rename = {"no-rename": "Don't Rename", "title-album": "{Title} - {Album}",

@@ -1,1 +1,4 @@
 /PymTag.spec
+/dist/
+/venv/
+/.idea/
