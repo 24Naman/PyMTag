@@ -69,7 +69,7 @@ class TagEditor(App, BoxLayout):
 
         self.constants = Constants()
         self.title = self.constants.window_title
-        self.icon = os.path.join('extras', 'images', 'app_icon.ico')
+        self.icon = os.path.join('res', 'app_icon.ico')
 
         # layouts
         self.main_layout = BoxLayout(orientation='horizontal')
@@ -556,8 +556,8 @@ class TagEditor(App, BoxLayout):
         :type _: Button
         """
         art_picker.dismiss()
-        extract_file = f"{self.text_input_dict['album']}_{round(time())}.jpeg" if self.text_input_dict['album'] != "" \
-            else f"album_art_{round(time())}.jpeg"
+        extract_file = f"{self.text_input_dict['album'].text}_{round(time())}.jpeg" \
+            if self.text_input_dict['album'].text != "" else f"album_art_{round(time())}.jpeg"
         file_dialog = CreateFileDialog(False, None, extract_file, 0, "*.jpeg| JPEG File", None)
         file_dialog.DoModal()
 
