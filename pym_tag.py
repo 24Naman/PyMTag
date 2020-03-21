@@ -19,6 +19,7 @@
 
 import os
 import pathlib
+import re
 import shutil
 import tempfile
 import webbrowser
@@ -196,9 +197,9 @@ class TagEditor(App, BoxLayout):
         # popup_background.add_widget(Image(source=self.constants.rocket_image))
         # popup.background = self.constants.rocket_image
         popup.background_color = [0, 255, 220, 0.9]
-        popup.title_size = 18       # size in sp 255 0 120
-        popup.title_color = [1, 255, 0, 1]        # rgba (pink)
-        popup.separator_color = [1, 0, 255, 255]    # rgba (cyan)
+        popup.title_size = 18  # size in sp 255 0 120
+        popup.title_color = [1, 255, 0, 1]  # rgba (pink)
+        popup.separator_color = [1, 0, 255, 255]  # rgba (cyan)
         popup.separator_height = 5
 
         return popup
@@ -556,8 +557,14 @@ class TagEditor(App, BoxLayout):
         :type _: Button
         """
         art_picker.dismiss()
-        extract_file = f"{self.text_input_dict['album'].text}_{round(time())}.jpeg" \
-            if self.text_input_dict['album'].text != "" else f"album_art_{round(time())}.jpeg"
+
+        # create name for extracted album art and name it on the basis of it's album name and replace all punctuation
+        # with ""
+        extract_file = (f"{self.text_input_dict['album'].text}_{round(time())}.jpeg"
+                        if self.text_input_dict['album'].text != ""
+                        else f"album_art_{round(time())}.jpeg")
+        extract_file = re.sub(r"[^\w\s]", '', extract_file).replace('_', "")
+
         file_dialog = CreateFileDialog(False, None, extract_file, 0, "*.jpeg| JPEG File", None)
         file_dialog.DoModal()
 
