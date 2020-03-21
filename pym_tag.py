@@ -418,8 +418,7 @@ class TagEditor(App, BoxLayout):
                 self.album_art_all_songs(self.text_input_dict['album'].text,
                                          self.text_input_dict['albumartist'].text)
             except AssertionError:
-                self._return_popup("Missing Fields",
-                                   content=PymLabel(text="Album and Album Artist is Missing"))
+                self._return_popup("Missing Fields", content=PymLabel(text="Album and Album Artist is Missing"))
 
         # resetting the widgets after saving the file
         self.reset_widgets(None)
@@ -560,10 +559,10 @@ class TagEditor(App, BoxLayout):
 
         # create name for extracted album art and name it on the basis of it's album name and replace all punctuation
         # with ""
-        extract_file = (f"{self.text_input_dict['album'].text}_{round(time())}.jpeg"
-                        if self.text_input_dict['album'].text != ""
-                        else f"album_art_{round(time())}.jpeg")
-        extract_file = re.sub(r"[^\w\s]", '', extract_file).replace('_', "")
+        extract_file = f"{self.text_input_dict['album'].text}_{round(time())}.jpeg" \
+            if self.text_input_dict['album'].text != "" else f"album_art_{round(time())}.jpeg"
+
+        # extract_file = re.sub(r"[^\w\s]", '', extract_file).replace('_', "")
 
         file_dialog = CreateFileDialog(False, None, extract_file, 0, "*.jpeg| JPEG File", None)
         file_dialog.DoModal()

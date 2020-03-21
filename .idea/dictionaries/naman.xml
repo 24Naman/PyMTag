@@ -4,14 +4,22 @@
       <w>albumartist</w>
       <w>apic</w>
       <w>argb</w>
+      <w>bootloader</w>
       <w>borderless</w>
       <w>clearcolor</w>
+      <w>datas</w>
+      <w>deps</w>
       <w>filesave</w>
       <w>fullscreen</w>
+      <w>glew</w>
+      <w>hiddenimports</w>
+      <w>hookspath</w>
       <w>kivy</w>
       <w>naman</w>
+      <w>noarchive</w>
       <w>noconfirm</w>
       <w>noconsole</w>
+      <w>pathex</w>
       <w>pylint</w>
       <w>rgba</w>
       <w>userprofile</w>

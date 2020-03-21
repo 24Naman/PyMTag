@@ -62,7 +62,7 @@ class Constants(OrderedDict):
 
         # File renaming options
         self.rename = {"no-rename": "Don't Rename", "title-album": "{Title} - {Album}",
-                       "album-title": "{Album} - {Title}",
+                       "album-title": "{Album} - {Title}", "artist-title": "{Artist} - {Title}",
                        "album-artist-title": "{Album} - {Artist} - {Title}",
                        "artist-album-title": "{Artist} - {Album} - {Title}",
                        "album-albumartist-title": "{Album} - {AlbumArtist} - {Title}",
