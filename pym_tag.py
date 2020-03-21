@@ -298,8 +298,7 @@ class TagEditor(App, BoxLayout):
 
         if any(['APIC:Cover' in mp3_file, 'APIC:' in mp3_file]):
             with open(os.path.join(self.to_delete.name, 'image.jpeg'), 'wb') as img:
-                img.write(mp3_file['APIC:'].data)
-                img.write(mp3_file['APIC:COVER'].data)
+                img.write(mp3_file['APIC:' if 'APIC:' in mp3_file else 'APIC:Cover'].data)
 
             self.image_cover_art.source = os.path.join(self.to_delete.name, 'image.jpeg')
             self.image_cover_art.reload()
