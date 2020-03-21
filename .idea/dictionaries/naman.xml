@@ -6,6 +6,7 @@
       <w>argb</w>
       <w>bootloader</w>
       <w>borderless</w>
+      <w>cascadia</w>
       <w>clearcolor</w>
       <w>datas</w>
       <w>deps</w>
@@ -22,6 +23,7 @@
       <w>pathex</w>
       <w>pylint</w>
       <w>rgba</w>
+      <w>tracknumber</w>
       <w>userprofile</w>
     </words>
   </dictionary>

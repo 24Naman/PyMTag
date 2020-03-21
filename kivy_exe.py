@@ -22,6 +22,7 @@ def main():
     python = sys.executable
     app_name = "PyMTag"
     main_file = "py_main.py"
+    # Generating specification file
     # spec_cmd = rf"{python} -m PyInstaller -y --noconsole --name {app_name} --icon images/app_icon.ico py_main.py"
 
     logging.info(f"Generating Specification file...")

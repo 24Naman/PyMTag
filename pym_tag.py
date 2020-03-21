@@ -19,7 +19,6 @@
 
 import os
 import pathlib
-import re
 import shutil
 import tempfile
 import webbrowser
@@ -90,9 +89,12 @@ class TagEditor(App, BoxLayout):
 
         self.text_input_dict = {key: TextInput(hint_text_color=[26, 12, 232, 1],
                                                hint_text=self.constants[key],
+                                               font_name=os.path.join('res', 'AlexBrush-Regular.ttf'),
+                                               halign='center',
                                                multiline=False,
                                                write_tab=False,
-                                               font_size='20sp',
+                                               font_size='30sp',
+                                               input_filter='int' if key in ("date", "tracknumber") else None,
                                                background_color=(0, 0, 255, 0.8))
                                 for key in self.constants}
 
@@ -152,7 +154,7 @@ class TagEditor(App, BoxLayout):
         # button bindings
         for button, binding in zip((self.button_open, self.button_save, self.button_reset,
                                     self.button_album_art_change),
-                                   (self.file_open, self.save_file, self.reset_widgets,
+                                   (self.file_open, self.save_file, self.init_widgets,
                                     self.album_art_manager)):
             button.bind(on_press=binding)
 
@@ -227,17 +229,22 @@ class TagEditor(App, BoxLayout):
 
         self.add_widget(self.main_layout)
 
+        self.init_widgets(None)
+
         return self
 
-    def reset_widgets(self, _):
+    def init_widgets(self, _):
         """
-            Reset all field to original state
+        Reset all field to original state
+        :param _: Placeholder for button when used as a callback
+        :return:
         """
         self.label_file_name.pretty_text = 'Open A File'
         self.title = self.constants.window_title
 
         for key in self.text_input_dict:
             self.text_input_dict[key].text = ''
+            self.text_input_dict[key].readonly = True
 
         if os.path.exists(os.path.join(os.getcwd(), self.constants.default_tag_cover)):
             self.image_cover_art.source = self.constants.default_tag_cover
@@ -264,8 +271,11 @@ class TagEditor(App, BoxLayout):
         :return:
         :rtype:
         """
-        self.reset_widgets(None)
+        self.init_widgets(None)
         self.checkbox_all_albums_art.disabled = False
+
+        for text_input in self.text_input_dict.values():
+            text_input.readonly = False
 
         # True, None for fileopen and False, File_Name for file save dialog
         if not file_path:
@@ -311,8 +321,7 @@ class TagEditor(App, BoxLayout):
         with suppress(KeyError):
             for key in self.text_input_dict:
                 if not audio_file.get(key, self.text_input_dict[key].text) == "":
-                    self.text_input_dict[key].text = \
-                        audio_file.get(key, self.text_input_dict[key].text)[0]
+                    self.text_input_dict[key].text = audio_file.get(key, self.text_input_dict[key].text)[0]
 
         TagEditor.FILE_OPENED = True
 
@@ -421,7 +430,7 @@ class TagEditor(App, BoxLayout):
                 self._return_popup("Missing Fields", content=PymLabel(text="Album and Album Artist is Missing"))
 
         # resetting the widgets after saving the file
-        self.reset_widgets(None)
+        self.init_widgets(None)
 
     def album_art_manager(self, _: Button) -> None:
         """
