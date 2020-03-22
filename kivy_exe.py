@@ -8,7 +8,7 @@
 """
 
 import os
-import sys
+# import sys
 import logging
 
 
@@ -19,9 +19,9 @@ def main():
     """
     logging.basicConfig(level=logging.NOTSET)
 
-    python = sys.executable
+    # python = sys.executable
     app_name = "PyMTag"
-    main_file = "py_main.py"
+    # main_file = "py_main.py"
     # Generating specification file
     # spec_cmd = rf"{python} -m PyInstaller -y --noconsole --name {app_name} --icon images/app_icon.ico py_main.py"
 

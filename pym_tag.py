@@ -26,11 +26,9 @@ from contextlib import suppress, contextmanager
 from functools import partial
 from glob import glob
 from time import time
-from typing import AnyStr, Tuple, Any, Union
+from typing import AnyStr, Tuple, Union
 from urllib.parse import urlunparse, quote, urlencode
 
-# noinspection PyProtectedMember
-from win32ui import CreateFileDialog
 from kivy.app import App
 from kivy.core.window import Window
 from kivy.uix.boxlayout import BoxLayout
@@ -46,6 +44,7 @@ from mutagen.easyid3 import EasyID3
 # noinspection PyProtectedMember
 from mutagen.id3 import APIC, ID3
 from mutagen.mp3 import MP3
+from win32ui import CreateFileDialog
 
 from helper_classes import Constants, PymLabel, CustomSpinner
 
@@ -233,7 +232,7 @@ class TagEditor(App, BoxLayout):
 
         return self
 
-    def init_app(self, _):
+    def init_app(self, _: Union[Button, None]):
         """
         Set all field to original state
         :param _: Placeholder for button when used as a callback
@@ -262,17 +261,16 @@ class TagEditor(App, BoxLayout):
         # binding keyboard handler
         Window.bind(on_keyboard=self.on_keyboard)
 
-    def on_keyboard(self, window, key, scancode, codepoint, modifier):
+    def on_keyboard(self, _, __, ___, codepoint, modifier):
         """
         Handler for keyboard shortcuts
-        :param window:
-        :param key:
-        :param scancode:
+        :param _: Window
+        :param __: Key
+        :param ___: Scancode
         :param codepoint:
         :param modifier:
         :return:
         """
-        print(codepoint, 1234, modifier)
         if modifier == ['ctrl'] and codepoint == 'o':
             self.file_open(None)
 
