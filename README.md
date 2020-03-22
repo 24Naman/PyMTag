@@ -5,7 +5,7 @@ MP3 Tag Editor in Python
 
 <br />
 
-Libraries Used:
+Libraries Used for the App:
 
 <ul>
 <li> GUI Python Framework &rarr; <a href=https://github.com/kivy/kivy> Kivy</a> 
