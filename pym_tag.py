@@ -147,14 +147,12 @@ class TagEditor(App, BoxLayout):
         # Button's Layout
         self.layout_button = BoxLayout(orientation='horizontal')
 
-        for widget in self.button_open, self.button_save, self.button_reset:
+        for widget in self.button_open, self.button_save:
             self.layout_button.add_widget(widget)
 
         # button bindings
-        for button, binding in zip((self.button_open, self.button_save, self.button_reset,
-                                    self.button_album_art_change),
-                                   (self.file_open, self.save_file, self.init_app,
-                                    self.album_art_manager)):
+        for button, binding in zip((self.button_open, self.button_save, self.button_album_art_change),
+                                   (self.file_open, self.save_file, self.album_art_manager)):
             button.bind(on_press=binding)
 
         self.file_name, self.file_path, self.file_extension = str(), list(), str()
