@@ -269,10 +269,10 @@ class TagEditor(App, BoxLayout):
         :param modifier:
         :return:
         """
-        if modifier == ['ctrl'] and codepoint == 'o':
+        if 'ctrl' in modifier and codepoint == 'o':
             self.file_open(None)
 
-        elif modifier == ['ctrl'] and codepoint == 's':
+        elif'ctrl' in modifier and codepoint == 's':
             self.save_file(None)
 
     def file_open(self, _: Union[Button, None], file_path=None) -> None:
