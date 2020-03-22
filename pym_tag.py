@@ -26,7 +26,7 @@ from contextlib import suppress, contextmanager
 from functools import partial
 from glob import glob
 from time import time
-from typing import AnyStr, Tuple
+from typing import AnyStr, Tuple, Any, Union
 from urllib.parse import urlunparse, quote, urlencode
 
 # noinspection PyProtectedMember
@@ -154,7 +154,7 @@ class TagEditor(App, BoxLayout):
         # button bindings
         for button, binding in zip((self.button_open, self.button_save, self.button_reset,
                                     self.button_album_art_change),
-                                   (self.file_open, self.save_file, self.init_widgets,
+                                   (self.file_open, self.save_file, self.init_app,
                                     self.album_art_manager)):
             button.bind(on_press=binding)
 
@@ -229,13 +229,13 @@ class TagEditor(App, BoxLayout):
 
         self.add_widget(self.main_layout)
 
-        self.init_widgets(None)
+        self.init_app(None)
 
         return self
 
-    def init_widgets(self, _):
+    def init_app(self, _):
         """
-        Reset all field to original state
+        Set all field to original state
         :param _: Placeholder for button when used as a callback
         :return:
         """
@@ -259,7 +259,27 @@ class TagEditor(App, BoxLayout):
         self.to_delete.cleanup()
         self.to_delete = tempfile.TemporaryDirectory()
 
-    def file_open(self, _, file_path=None) -> None:
+        # binding keyboard handler
+        Window.bind(on_keyboard=self.on_keyboard)
+
+    def on_keyboard(self, window, key, scancode, codepoint, modifier):
+        """
+        Handler for keyboard shortcuts
+        :param window:
+        :param key:
+        :param scancode:
+        :param codepoint:
+        :param modifier:
+        :return:
+        """
+        print(codepoint, 1234, modifier)
+        if modifier == ['ctrl'] and codepoint == 'o':
+            self.file_open(None)
+
+        elif modifier == ['ctrl'] and codepoint == 's':
+            self.save_file(None)
+
+    def file_open(self, _: Union[Button, None], file_path=None) -> None:
         """
             Opens a Windows file open dialog.
             It will use '.mp3' extension for file types
@@ -271,7 +291,7 @@ class TagEditor(App, BoxLayout):
         :return:
         :rtype:
         """
-        self.init_widgets(None)
+        self.init_app(None)
         self.checkbox_all_albums_art.disabled = False
 
         for text_input in self.text_input_dict.values():
@@ -325,7 +345,7 @@ class TagEditor(App, BoxLayout):
 
         TagEditor.FILE_OPENED = True
 
-    def save_file(self, _: Button) -> None:
+    def save_file(self, _: Union[Button, None]) -> None:
         """
         Save file and rename it according to the option selected by the user.
 
@@ -430,7 +450,7 @@ class TagEditor(App, BoxLayout):
                 self._return_popup("Missing Fields", content=PymLabel(text="Album and Album Artist is Missing"))
 
         # resetting the widgets after saving the file
-        self.init_widgets(None)
+        self.init_app(None)
 
     def album_art_manager(self, _: Button) -> None:
         """

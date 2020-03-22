@@ -8,6 +8,7 @@
       <w>borderless</w>
       <w>cascadia</w>
       <w>clearcolor</w>
+      <w>codepoint</w>
       <w>datas</w>
       <w>deps</w>
       <w>filesave</w>
@@ -23,6 +24,7 @@
       <w>pathex</w>
       <w>pylint</w>
       <w>rgba</w>
+      <w>scancode</w>
       <w>tracknumber</w>
       <w>userprofile</w>
     </words>
