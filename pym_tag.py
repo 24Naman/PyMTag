@@ -119,30 +119,29 @@ class TagEditor(App, BoxLayout):
         for widget in label_all, self.checkbox_all_albums_art:
             self.checkbox_layout.add_widget(widget)
 
-        self.button_open = Button(text='Open', background_color=(255, 0, 0, 1),
-                                  background_normal='')
-        self.button_save = Button(text='Save', background_color=(255, 0, 0, 1),
-                                  background_normal='')
-        self.button_reset = Button(text='Reset', background_color=(255, 0, 0, 1),
-                                   background_normal='')
-        self.naming_opt = "no-rename"
+        open_text = "Open\n\n[size=12][i]CTRL + O[/i][/size]"
+        self.button_open = Button(text=open_text, background_color=(255, 0, 0, 1),
+                                  background_normal='', markup=True, halign='center', valign='center')
+        save_text = "Save\n\n[size=12][i]CTRL + S[/i][/size]"
+        self.button_save = Button(text=save_text, background_color=(255, 0, 0, 1),
+                                  background_normal='', markup=True, halign='center', valign='center')
+        self.naming_format = "no-rename"
 
-        def _naming_option_selector(_, selected_text):
+        def _naming_formation_selector(_, selected_text):
             """
             binding function for the spinner, which assign the selected text to
-            'self.naming_option'
+            'self.naming_format'
             :param _:
             :type _:
             :param selected_text: the option selected by the user in the Spinner
             :type selected_text: str
             """
-            self.naming_opt = selected_text
+            self.naming_format = selected_text
 
-        self.naming_option_spinner = CustomSpinner(text=self.constants.rename[self.naming_opt],
-                                                   values=[self.constants.rename[key]
-                                                           for key in self.constants.rename])
+        self.naming_spinner = CustomSpinner(text=self.constants.rename[self.naming_format],
+                                            values=self.constants.rename.values())
 
-        self.naming_option_spinner.bind(text=_naming_option_selector)
+        self.naming_spinner.bind(text=_naming_formation_selector)
 
         # Button's Layout
         self.layout_button = BoxLayout(orientation='horizontal')
@@ -218,7 +217,7 @@ class TagEditor(App, BoxLayout):
         for key in self.text_input_dict:
             self.music_file_tag_layout.add_widget(widget=self.text_input_dict[key])
 
-        for widget in self.naming_option_spinner, self.checkbox_layout, self.layout_button:
+        for widget in self.naming_spinner, self.checkbox_layout, self.layout_button:
             self.music_file_tag_layout.add_widget(widget)
 
         for widget in self.music_file_info_layout, self.music_file_tag_layout:
@@ -412,14 +411,14 @@ class TagEditor(App, BoxLayout):
         self.file_name = self.file_path
 
         # if the option is not "no-rename": "Don't Rename"
-        if self.naming_opt != list(self.constants.rename.keys())[0]:
+        if self.naming_format != list(self.constants.rename.keys())[0]:
             artist = music_file['artist'][0]
             albumartist = music_file['albumartist'][0]
             album = music_file['album'][0]
             title = music_file['title'][0]
 
             # renaming the modified file with name according to the chosen option by the user
-            self.file_name = self.naming_opt.format(Artist=artist, AlbumArtist=albumartist, Album=album, Title=title)
+            self.file_name = self.naming_format.format(Artist=artist, AlbumArtist=albumartist, Album=album, Title=title)
             self.file_name = rf"{os.path.dirname(self.file_path)}\{self.file_name}.mp3"
             try:
                 os.rename(self.file_path, self.file_name)
