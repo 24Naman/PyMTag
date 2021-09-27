@@ -1,0 +1,7 @@
+/PymTag.spec
+/dist/
+/venv/
+/.idea/
+/__pycache__/
+/build/
+/output/
