@@ -75,6 +75,12 @@ class Constants(OrderedDict):
 
     # noinspection SpellCheckingInspection
     def __iter__(self) -> Iterator[str]:
+        """
+        Creating iterator to use in UI creation
+
+        :yield: [description]
+        :rtype: Iterator[str]
+        """
         yield from ['title', 'artist', 'album', 'albumartist', 'date', 'genre', 'tracknumber', 'lyrics']
 
 
