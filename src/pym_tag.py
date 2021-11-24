@@ -426,7 +426,8 @@ class TagEditor(App, BoxLayout):
 
             # renaming the modified file with name according to the chosen option by the user
             self.file_name = self.naming_format.format(Artist=artist, AlbumArtist=albumartist, Album=album, Title=title)
-            self.file_name = rf"{os.path.dirname(self.file_path)}\{self.file_name}.mp3"
+            self.file_name = os.path.join(os.path.dirname(self.file_path), f"{self.file_name}.mp3")
+
             try:
                 os.rename(self.file_path, self.file_name)
 
@@ -509,7 +510,7 @@ class TagEditor(App, BoxLayout):
         :type _: Button
         """
         art_picker.dismiss()
-        file_types = "JPEG File, jpg File, PNG File | *.jpg; *.jpeg; *.png; | GIF File | *.gif; |"
+        file_types = "JPEG File, jpg File, PNG File | *.jpg *.jpeg *.png;"
 
         with suppress(subprocess.CalledProcessError):
             # opening file dialog in Downloads folder if the image was searched online
