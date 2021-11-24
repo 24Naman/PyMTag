@@ -1,1 +1,0 @@
-CreateObject("WScript.Shell").Run chr(34) & "D:\Naman\PyMTag\venv\Scripts\python.exe" & Chr(34) & "main.py" & Chr(34), 0

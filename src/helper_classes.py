@@ -6,7 +6,6 @@
 
 """
 import os
-import random
 from collections import OrderedDict
 from typing import AnyStr, Iterator
 
@@ -55,11 +54,10 @@ class Constants(OrderedDict):
         self.name = "PyMTag"
         self.window_title = f"{self.name} - MP3 Tag Editor"
 
-        tag_covers = ['default_music_one.png', 'default_music_two.png']
-        self.default_tag_cover = os.path.join('res', random.choice(tag_covers))
+        self.default_tag_cover = os.path.join('../res', 'default_music.jpg')
 
-        self.rocket_image = os.path.join('res', 'rocket.png')
-        self.switch_icon = os.path.join("res", "switch_icon.png")
+        self.rocket_image = os.path.join('../res', 'rocket.png')
+        self.switch_icon = os.path.join("../res", "switch_icon.png")
 
         # File renaming options
         self.rename = {"no-rename": "Don't Rename", "title-album": "{Title} - {Album}",

@@ -19,13 +19,13 @@
 
 import os
 import pathlib
-import shutil
+import subprocess
+import sys
 import tempfile
 import webbrowser
 from contextlib import suppress, contextmanager
 from functools import partial
 from glob import glob
-from time import time
 from typing import AnyStr, Tuple, Union
 from urllib.parse import urlunparse, quote, urlencode
 
@@ -39,13 +39,11 @@ from kivy.uix.label import Label
 from kivy.uix.popup import Popup
 from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
-
 from mutagen import id3, File
 from mutagen.easyid3 import EasyID3
 # noinspection PyProtectedMember
 from mutagen.id3 import APIC, ID3, USLT
 from mutagen.mp3 import MP3
-from win32ui import CreateFileDialog
 
 from helper_classes import Constants, PymLabel, CustomSpinner
 
@@ -69,7 +67,7 @@ class TagEditor(App, BoxLayout):
 
         self.constants = Constants()
         self.title = self.constants.window_title
-        self.icon = os.path.join('res', 'app_icon.ico')
+        self.icon = os.path.join('../res', 'app_icon.ico')
 
         # layouts
         self.main_layout = BoxLayout(orientation='horizontal')
@@ -89,7 +87,7 @@ class TagEditor(App, BoxLayout):
 
         self.text_input_dict = {key: TextInput(hint_text_color=[26, 12, 232, 1],
                                                hint_text=self.constants[key],
-                                               font_name=os.path.join('res', 'AlexBrush-Regular.ttf'),
+                                               font_name=os.path.join('../res', 'AlexBrush-Regular.ttf'),
                                                halign='center',
                                                multiline=(key != "lyrics"),
                                                write_tab=False,
@@ -155,7 +153,7 @@ class TagEditor(App, BoxLayout):
                                    (self.file_open, self.save_file, self.album_art_manager)):
             button.bind(on_press=binding)
 
-        self.file_name, self.file_path, self.file_extension = str(), list(), str()
+        self.file_name, self.file_path, self.file_extension = str(), str(), str()
         self.to_delete = tempfile.TemporaryDirectory()
 
     def __repr__(self) -> str:
@@ -275,13 +273,11 @@ class TagEditor(App, BoxLayout):
         elif'ctrl' in modifier and codepoint == 's':
             self.save_file(None)
 
-    def file_open(self, _: Union[Button, None], file_path=None) -> None:
+    def file_open(self, _: Union[Button, None]) -> None:
         """
             Opens a Windows file open dialog.
             It will use '.mp3' extension for file types
 
-        :param file_path:
-        :type file_path:
         :param _:
         :type _:
         :return:
@@ -294,20 +290,19 @@ class TagEditor(App, BoxLayout):
             text_input.readonly = False
 
         # True, None for fileopen and False, File_Name for file save dialog
-        if not file_path:
-            file_dialog = CreateFileDialog(True, ".mp3", None, 0, "MP3 Files (*.mp3)|*.mp3", None)
-            file_dialog.DoModal()
-            self.file_name = file_dialog.GetFileName()
-            self.file_path = file_dialog.GetPathNames()[0]
-            self.file_extension = file_dialog.GetFileExt()
+        try:
+            self.file_path = subprocess.check_output([
+                'zenity', '--file-selection', '--file-filter=MP3 files (MP3) | *.mp3', '--title=Select a MP3 file'
+            ]).decode(sys.stdout.encoding).strip()
 
-        else:
-            self.file_name = os.path.basename(file_path)
-            self.file_path = os.path.dirname(file_path)
-            self.file_extension = os.path.splitext(file_path)[-1]
+        except subprocess.CalledProcessError:
+            self.file_path = ""
+
+        self.file_name = os.path.basename(self.file_path)
+        self.file_extension = os.path.splitext(self.file_path)[-1]
 
         # if no file is selected or cancel button is pressed
-        if self.file_name == '' or self.file_path == [] or self.file_extension == '':
+        if self.file_path == "":
             # if file open operation is cancelled
             return
 
@@ -393,7 +388,9 @@ class TagEditor(App, BoxLayout):
 
                 self.checkbox_all_albums_art.active = False
 
-            file[u"USLT::'eng'"] = (USLT(encoding=3, lang=u'eng', desc=u'Lyrics', text=self.text_input_dict['lyrics'].text.strip()))
+            file[u"USLT::'eng'"] = (USLT(
+                encoding=3, lang=u'eng', desc=u'Lyrics', text=self.text_input_dict['lyrics'].text.strip())
+            )
 
         with self.saving(EasyID3(self.file_path)) as music_file:
             # adding tags to the file
@@ -498,7 +495,7 @@ class TagEditor(App, BoxLayout):
 
         art_picker.open()
 
-    def album_art_local(self, _: Button, art_picker: Popup, downloaded=False) -> None:
+    def album_art_local(self, _: Button, art_picker: Popup) -> None:
         """
         Allows to selected the album art from the local file system.
         Opens the file dialog for selecting jpeg or png or jpg file
@@ -509,25 +506,18 @@ class TagEditor(App, BoxLayout):
         :param art_picker:
         :type art_picker: Popup
         :param _:
-        :type _:
-        :param downloaded: this parameter decides open dialog in last opened folder if 'False'
-        otherwise opens in User's Download folder
-        :type downloaded: Boolean
+        :type _: Button
         """
         art_picker.dismiss()
         file_types = "JPEG File, jpg File, PNG File | *.jpg; *.jpeg; *.png; | GIF File | *.gif; |"
 
-        # True for fileopen and False for filesave dialog
-        # opening file dialog in Downloads folder if the image was searched online
-        file_dialog = CreateFileDialog(True,
-                                       os.path.join(os.getenv('USERPROFILE', 'Downloads'))
-                                       if downloaded else None, None, 0, file_types, None)
+        with suppress(subprocess.CalledProcessError):
+            # opening file dialog in Downloads folder if the image was searched online
+            image_path = subprocess.check_output([
+                        'zenity', '--file-selection', f'--file-filter={file_types}', '--title=Select an Image'
+                    ]).decode(sys.stdout.encoding).strip()
 
-        file_dialog.DoModal()
-
-        # assigning the mp3 cover art widget's source to selected image path
-        if not file_dialog.GetPathNames()[0] == "":
-            self.image_cover_art.source = file_dialog.GetPathNames()[0]
+            self.image_cover_art.source = image_path
             self.image_cover_art.reload()
 
     def album_art_google(self, _: Button, art_picker: Popup) -> None:
@@ -557,7 +547,7 @@ class TagEditor(App, BoxLayout):
         # open the default web browser to let the user download the image manually
         webbrowser.open(search_url)
 
-        self.album_art_local(_, downloaded=True, art_picker=art_picker)
+        self.album_art_local(_, art_picker=art_picker)
 
     def album_art_remove(self, _: Button, art_picker: Popup) -> None:
         """
@@ -582,7 +572,8 @@ class TagEditor(App, BoxLayout):
         finally:
             self.image_cover_art.reload()
 
-    def album_art_extract(self, _: Button, art_picker: Popup) -> None:
+    @staticmethod
+    def album_art_extract(_: Button, art_picker: Popup) -> None:
         """
             Extracting Album art and saving to disc
         :param art_picker:
@@ -594,17 +585,17 @@ class TagEditor(App, BoxLayout):
 
         # create name for extracted album art and name it on the basis of it's album name and replace all punctuation
         # with ""
-        extract_file = f"{self.text_input_dict['album'].text}_{round(time())}.jpeg" \
-            if self.text_input_dict['album'].text != "" else f"album_art_{round(time())}.jpeg"
-
-        # extract_file = re.sub(r"[^\w\s]", '', extract_file).replace('_', "")
-
-        file_dialog = CreateFileDialog(False, None, extract_file, 0, "*.jpeg| JPEG File", None)
-        file_dialog.DoModal()
-
-        file_path = file_dialog.GetPathNames()
-
-        shutil.copy(self.image_cover_art.source, file_path[0])
+        # extract_file = f"{self.text_input_dict['album'].text}_{round(time())}.jpeg" \
+        #     if self.text_input_dict['album'].text != "" else f"album_art_{round(time())}.jpeg"
+        #
+        # # extract_file = re.sub(r"[^\w\s]", '', extract_file).replace('_', "")
+        #
+        # file_dialog = CreateFileDialog(False, None, extract_file, 0, "*.jpeg| JPEG File", None)
+        # file_dialog.DoModal()
+        #
+        # file_path = file_dialog.GetPathNames()
+        #
+        # shutil.copy(self.image_cover_art.source, file_path[0])
 
     def album_art_all_songs(self, album: AnyStr, album_artist: AnyStr) -> None:
         """
@@ -616,7 +607,6 @@ class TagEditor(App, BoxLayout):
         """
 
         for file_name in glob(f"{os.path.dirname(self.file_path)}/*.mp3"):
-            print(1234)
             music_file = EasyID3(file_name)
 
             if music_file['album'][0] == album and music_file['albumartist'][0] == album_artist:

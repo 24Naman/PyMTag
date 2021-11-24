@@ -1,4 +1,4 @@
-/PymTag.spec
+*.sh
 /dist/
 /venv/
 /.idea/
