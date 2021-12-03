@@ -292,7 +292,7 @@ class TagEditor(App, BoxLayout):
         # True, None for fileopen and False, File_Name for file save dialog
         try:
             self.file_path = subprocess.check_output([
-                'zenity', '--file-selection', '--file-filter=MP3 files (MP3) | *.mp3', '--title=Select a MP3 file'
+                'zenity', '--file-selection', '--file-filter=MP3 files (MP3) | *.mp3 | *.MP3', '--title=Select an MP3'
             ]).decode(sys.stdout.encoding).strip()
 
         except subprocess.CalledProcessError:
@@ -510,13 +510,13 @@ class TagEditor(App, BoxLayout):
         :type _: Button
         """
         art_picker.dismiss()
-        file_types = "JPEG File, jpg File, PNG File | *.jpg *.jpeg *.png;"
+        file_types = "JPEG File, jpg File, PNG File | *.jpg | *.jpeg | *.png;"
 
         with suppress(subprocess.CalledProcessError):
             # opening file dialog in Downloads folder if the image was searched online
             image_path = subprocess.check_output([
-                        'zenity', '--file-selection', f'--file-filter={file_types}', '--title=Select an Image'
-                    ]).decode(sys.stdout.encoding).strip()
+                'zenity', '--file-selection', f'--file-filter={file_types}', '--title=Select an Image file'
+            ]).decode(sys.stdout.encoding).strip()
 
             self.image_cover_art.source = image_path
             self.image_cover_art.reload()
