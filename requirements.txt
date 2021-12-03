@@ -1,0 +1,5 @@
+docutils==0.18.1
+Kivy==2.0.0
+Kivy-Garden==0.1.4
+mutagen==1.45.1
+Pygments==2.10.0
