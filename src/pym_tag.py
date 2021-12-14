@@ -486,7 +486,7 @@ class TagEditor(App, BoxLayout):
         art_picker = self._return_popup(title='Select Album Art', content=art_button_layout,
                                         size=(200, 200))
 
-        # binding function to buttons in the popup
+        # binding function to button in the popup
         for widget, callback in zip((button_google_search, button_local_picker, button_art_remove,
                                      button_extract_art),
                                     (self.album_art_google, self.album_art_local,
@@ -498,7 +498,7 @@ class TagEditor(App, BoxLayout):
 
     def album_art_local(self, _: Button, art_picker: Popup) -> None:
         """
-        Allows to selected the album art from the local file system.
+        Allows to select the album art from the local file system.
         Opens the file dialog for selecting jpeg or png or jpg file
 
         It will open user's default Downloads folder in case the file is downloaded from the
@@ -584,7 +584,7 @@ class TagEditor(App, BoxLayout):
         """
         art_picker.dismiss()
 
-        # create name for extracted album art and name it on the basis of it's album name and replace all punctuation
+        # create name for extracted album art and name it on the basis of its album name and replace all punctuation
         # with ""
         # extract_file = f"{self.text_input_dict['album'].text}_{round(time())}.jpeg" \
         #     if self.text_input_dict['album'].text != "" else f"album_art_{round(time())}.jpeg"
@@ -618,7 +618,7 @@ class TagEditor(App, BoxLayout):
 
     def on_stop(self):
         """
-            this will be called when the app will exit
+            this will be called when the app will exit,
             and it will delete any temporary directory created
         """
         if self.to_delete is not None:
