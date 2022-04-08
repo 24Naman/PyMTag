@@ -168,7 +168,7 @@ class TagEditor(App, BoxLayout):
         :type file: File
         """
         yield file
-        file.save(v2_version=3, v1=2)
+        file.save()
 
     def _return_popup(self, title: AnyStr, content: Widget, size: Tuple = (500, 100),
                       size_hint=(None, None)) -> Popup:
@@ -417,7 +417,7 @@ class TagEditor(App, BoxLayout):
         self.file_name = self.file_path
         
         # if the option is not : "Don't Rename"
-        if self.naming_format != "no-rename":
+        if self.naming_format != "no-rename" and self.naming_format != "Don't Rename":
             print(self.naming_format)
             artist = music_file['artist'][0]
             albumartist = music_file['albumartist'][0]

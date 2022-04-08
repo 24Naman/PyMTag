@@ -13,4 +13,4 @@ def main():
     :return:
     """
     from kivy.logger import Logger
-    Logger.disabled = True
+    Logger.disabled = False 
