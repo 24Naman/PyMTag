@@ -5,9 +5,7 @@ MP3 Tag Editor in Python
 
 <br />
 
-Libraries Used for the App:
+## Libraries Used for the App:
 
-<ul>
-<li> GUI Python Framework &rarr; <a href=https://github.com/kivy/kivy> Kivy</a> 
-<li> ID3 Editing Support &rarr; <a href=https://github.com/quodlibet/mutagen/> Mutagen</a>
-</ul> 
+* [Python Kivy GUI Framework](https://github.com/kivy/kivy)
+* [Mutagen - MP3 ID3 Editing Support](https://github.com/quodlibet/mutagen/)
